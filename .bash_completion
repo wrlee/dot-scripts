@@ -14,25 +14,35 @@ RUN_BASH_COMPLETION=true
 ## Run all scripts in completion directories
 # /usr/local/Homebrew/completions/bash/
 # /usr/share/bash-completion/completions/
-for dir in /Applications/Docker.app/Contents/Resources/etc /usr/local/etc/bash_completion.d ~/.bash_completion.d; do
+for dir in /Applications/Docker.app/Contents/Resources/etc ${HOMEBREW_PREFIX+${HOMEBREW_PREFIX}/completions/$SHELL} ${HOMEBREW_PREFIX+${HOMEBREW_PREFIX}/etc/bash_completion.d} /usr/local/etc/bash_completion.d ~/.bash_completion.d
+do
 	found=0
 	[ -d "$dir" ] && for script in "${dir}"/*; do
+		## If script exists and its name is that of a valid command and a completion
+		## isn't already defined. For local scripts (in .bash_completion.d), the script
+		## must also be executable. This allows them to be disabled by marking them
+		## not exectuable. Since system scripts commonly suffix the command line with
+		## .bash-completion or -completion.bash, those need to ignored when looking
+		## for the command name.
+		## Need to wrap final && execution in if..fi because || would act as an "otherwise" and () wont work
 #		[ -x "$script" ] && type -t `basename "$script"`&>/dev/null && complete -p `basename "$script"` &>/dev/null || echo to be completed
-		## If executable script exists and its name is that of a valid command and a completion isn't already defined.
-		## Need to wrap actual execution in if..else..fi because || would act as an "otherwise" and () wont work
-		[ -x "$script" ] && type -t `basename "${script%.bash-completion}"`&>/dev/null && if complete -p `basename "$script"` &>/dev/null; then true; else
-			[ $found -eq 0 ] && echo -n "Completion:  `basename "$script"`" && found=1 || echo -n ", `basename "$script"`"
-			. "$script"
+		cmd="${script%.bash-completion}"
+		cmd=$(basename "${cmd%-completion.bash}")
+		cmd=$(basename "${cmd%.completion}")
+		type -t "${cmd}" &>/dev/null && if ! complete -p "$cmd" &>/dev/null; then
+			if [ "$dir" != ~/.bash_completion.d -o -x "$script" ]; then
+				[ $found -eq 0 ] && echo -n $'Completion \e[32m'"$dir"$'\e[0m: \e[36m'"$cmd" && found=1 || echo -n $'\e[0m, \e[36m'"$cmd"
+				. "$script"
+			fi
 		fi
 	done
-	[ $found -gt 0 ] && echo ...
+	[ $found -gt 0 ] && echo $'\e[0m'
 done
-unset dir script found
+unset dir script found cmd
 
 ## Override or simple additions to command completions
 function _compl_sshhosts() {
-    COMPREPLY=(`grep "^Host\W$2" ~/.ssh/config |sed "s/Host[ \t]*//"|tr "\n" " "`)
-#   [ "$2" -a "$REPLY" ] && export COMPREPLY
+    COMPREPLY=(`sed -rEn "/^Host[[:space:]]+$2/s/Host[ \t]*//p" ~/.ssh/config`)
 }
 complete -p alias &>/dev/null || complete -a alias
 complete -p shopt &>/dev/null || complete -A shopt -W "-p -s -u -q -o" shopt

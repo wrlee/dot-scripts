@@ -1,7 +1,7 @@
-_nix-startup
-============
+dot-scripts
+===========
 
-Here are set of scripts and init files that can be used across *nix systems (cygwin, Linux, Unix, Busybox, etc.). The point is to bring some consistency to this process and customization across disparate systems. If you are jumping between Unix-style systems—MacOS, Linux, BusyBox, etc.—then it is nice to be able to have a consistent set of command line tools. 
+Here are set of startup and init scripts that can be used across *nix systems (cygwin, Linux, Unix, Busybox, etc.). The point is to bring some consistency to this process and customization across disparate systems. If you are jumping between Unix-style systems—MacOS, Linux, BusyBox, etc.—then it is nice to be able to have a consistent set of command line tools. 
 
 Repository Organization
 -----------------------
