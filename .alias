@@ -87,11 +87,11 @@ function diff() {
 function edit()
 {
    if [ $# -eq 0 ]; then
-	if [ -f $EDTF ]; then
+	if [ -f "$EDTF" ]; then
 	   echo $EDTF
-	   ${EDITOR:-vi} $EDTF
+	   ${EDITOR:-vi} "$EDTF"
 	else
-	   [ -n $EDTF ] && echo \"$EDTF\" does not exist.
+	   [ -n "$EDTF" ] && echo \"$EDTF\" does not exist.
 	fi
    else
 	export EDTF="$@"
@@ -125,7 +125,7 @@ function go() {
 	fi
 	shift $(($OPTIND-1));
 #	[ -r ~/.go ] && cd `awk "/^$1[ \t]/ { GOPATH=\\$2 } END { printf \"%s\", GOPATH }" ~/.go|sed "s%~%$HOME%"` 
-	[ -r ~/.go ] && cd `grep -i '^'$1'[ \t]' ~/.go |cut -d ' ' -f 2-|tail -1`
+	[ -r ~/.go ] && cd "`grep -i '^'$1'[ \t]' ~/.go |cut -d ' ' -f 2-|tail -1`"
 }
 [ -r ~/.go ] && complete -W "-s $(cut -d' ' -f1 <~/.go)" go
 

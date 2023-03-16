@@ -1,0 +1,44 @@
+## Set up bash completion rules
+## If ~/.bash_completion.d directory exists, then its executable scripts are
+## if they match the name of a command.
+#[ -z "$PS1" ] && return
+#[ -n "$RUN_BASH_COMPLETION" ] && return
+[ -z "$PS1" -o -n "$RUN_BASH_COMPLETION" ] && return
+RUN_BASH_COMPLETION=true
+#echo .bash_completion...
+
+## If global /etc/bash_completion.d exists, it has probably already been run.
+## Run all scripts in completion directories
+for dir in ~/.bash_completion.d; do
+	[ -d "$dir" ] && for script in "${dir}"/*; do
+#		[ -x "$script" ] && echo "$script" is executable
+#		[ -x "$script" ] && type -t `basename "$script"`&>/dev/null && echo `basename "$script"` command exists
+#		[ -x "$script" ] && type -t `basename "$script"`&>/dev/null && complete -p `basename "$script"` &>/dev/null || echo to be completed
+		## If executable script exists and its name is that of a valid command and a completion isn't already defined.
+		## Need to wrap actual execution in if..else..fi because || would act as an "otherwise" and () wont work
+		[ -x "$script" ] && type -t `basename "$script"`&>/dev/null && if complete -p `basename "$script"` &>/dev/null; then true; else
+			echo Completion for `basename "$script"`...
+			. "$script"
+		fi
+	done
+done
+unset dir script
+
+## Override or simple additions to command completions
+function _compl_sshhosts() {
+    COMPREPLY=(`grep "^Host\W$2" ~/.ssh/config |sed "s/Host[ \t]*//"|tr "\n" " "`)
+#   [ "$2" -a "$REPLY" ] && export COMPREPLY
+}
+complete -p alias &>/dev/null || complete -a alias
+complete -p shopt &>/dev/null || complete -A shopt -W "-p -s -u -q -o" shopt
+complete -p ssh &>/dev/null || complete -F _compl_sshhosts ssh
+complete -p scp &>/dev/null || complete -F _compl_sshhosts -S ":" -o default scp
+complete -p man &>/dev/null || complete -c man
+#complete -p cd &>/dev/null || complete -o filenames -o nospace -d cd
+complete -p unset &>/dev/null || complete -v unset
+complete -o filenames -o nospace -d cd
+
+if type -t svn &>/dev/null; then
+	complete -p svn &>/dev/null || complete -W "add checkout cleanup commit copy cp delete remove rm diff export help import info list ls lock log merge mkdir move mv rename propdel pdel propedit pedit propget pget proplist plist propset pset ps resolved revert status switch unlock update blame praise annotate" -f svn
+	`complete -p svn | awk -F ' '  '// { NF=NF-1; print; }'` chk
+fi
