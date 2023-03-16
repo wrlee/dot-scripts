@@ -3,23 +3,20 @@
 " 'hidden' hides buffers instead of closing them, allowing unwritten changes to a file and open a new file using :e, without being forced to write or undo your changes first. Also, undo buffers and marks are preserved while the buffer is open. 
 set hidden
 "set verbose=9
-set ff=unix
 
 if has('syntax')
 	syntax enable
-	"colorscheme evening
-	colorscheme desert
-	"hi Comment ctermfg=cyan
 endif
-
-filetype plugin indent on
-filetype indent on 
+color desert
+if has('filetype')
+	filetype plugin indent on
+	filetype indent on 
+endif
 set autoindent
 
 if has('autocmd')
 "	autocmd!
 	autocmd BufNewFile,BufRead *.json set filetype=json
-	autocmd Filetype php setlocal nobomb ff=unix
 endif
 
 " Show row,column at the bottom
@@ -34,9 +31,11 @@ set lazyredraw
 set shiftwidth=4
 set tabstop=4
 " Return to last edit position when opening files (You want this!)
-autocmd BufReadPost *
+if has('autocmd')
+	autocmd BufReadPost *
      \ if line("'\"") > 0 && line("'\"") <= line("$") |
-     \   exe "normal! g`\"" |
+     \    exe "normal! g`\"" |
      \ endif
+endif
 " Remember info about open buffers on close
 set viminfo^=%
