@@ -8,6 +8,7 @@ $if bash
 "\e[5D": backward-word		## MacOS: C-left
 "\e[5C": forward-word		## MacOS: C-right
 "\e[1;5F": kill-line		## MacOS: C-end
+"\e[3;5~": kill-line		## MacOS: C-del
 "\e[1;5H": backward-kill-line	## MacOS: C-home
 "\e[1;5D": backward-word	## cygwin: C-left
 "\e[1;5C": forward-word		## cygwin: C-right
