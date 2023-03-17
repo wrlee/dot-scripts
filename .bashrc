@@ -14,6 +14,7 @@
 
 ## 06/07/2013 WRL Deleted AxxsNet specific settings
 ## 01/16/2016 WRL Unset INPUTRC if ~/.inputrc exists (override potential default)
+## 10/11/2017 WRL Correctly check command (w/o `) before &&, ||: Set shopt properly
 
 ## If not running interactively, don't do anything
 ## Could also check that $- does not contain 'i': case $-; *i*) ...;; *) ...;; esac
@@ -26,11 +27,15 @@ RUN_BASHRC=true
 
 ## Some implementations invoke /etc/bash.bashrc for non-login, interactive
 ## shells, then call ~/.bashrc.
-if [ -r /etc/bash.bashrc ]; then
+#if [ -r /etc/bash.bashrc ]; then	## Ubuntu-style
+#if [ -n "$SESSION_MANAGER" -o -n "$SESSION" ]; then	## Gernic way to determine whether to run .profile
+if [ -z "$ps1" ]; then
+	. ~/.profile
 	## Execute common things that are bash independent
-	[ -n "$SHLVL" -o $SHLVL -eq 1 -a -z "$RUN_PROFILE" -a -r ~/.profile ] && . ~/.profile
+#	[ -n "$SHLVL" -o $SHLVL -eq 1 -a -z "$RUN_PROFILE" -a -r ~/.profile ] && . ~/.profile
 fi
-if [ "$SHLVL" -a $SHLVL -eq 1 ]; then
+#if [ "$SHLVL" -a $SHLVL -eq 1 ]; then
+if [ -n "$SESSION_MANAGER" -a $SHLVL -le 2 -o -z "$SESSION_MANAGER" -a $SHLVL -eq 1 ]; then
 #	## source the system wide bashrc if it exists
 #	[ -r /etc/bash.bashrc ] && source /etc/bash.bashrc
 #	## Execute common things that are bash independent
@@ -40,8 +45,8 @@ if [ "$SHLVL" -a $SHLVL -eq 1 ]; then
 	## Perform
 ##	[ -r ~/bash_profile ] && . ~/bash_profile
 	## History Options:
-	## Don't put duplicate lines in the history.
-	export HISTCONTROL=erasedups
+	## Delete previous duplicate lines from history.
+#	export HISTCONTROL=erasedups
 	## Ignore some controlling instructions
 	# export HISTIGNORE="[   ]*:&:bg:fg:exit"
 	export HISTIGNORE="d:e:l:l :ll:ll :ls:ls :cd:cd :exit:history"
@@ -57,16 +62,6 @@ if [ "$SHLVL" -a $SHLVL -eq 1 ]; then
 #    *)
 #		;;
 #    esac
-
-	# Since this shell is interactive, turn on programmable completion enhancements.
-	SUPPORTED_SHOPTS=`shopt|sed '1 s/^/:/;:a;${s/ .*/:/;q};N;s/[\t ].*\n/:/;ba;'`
-	ENABLE_SHOPTS=
-	[ ! "${SUPPORTED_SHOPTS/:autocd:/}" = "$SUPPORTED_SHOPTS" ] && ENABLE_SHOPTS+=" autocd"
-	[ ! "${SUPPORTED_SHOPTS/:completion_strip_exe:/}" = "$SUPPORTED_SHOPTS" ] && ENABLE_SHOPTS+=" completion_strip_exe"
-    `type shopt &>/dev/null` && shopt -s $ENABLE_SHOPTS cdspell checkwinsize cmdhist histreedit histappend nocasematch no_empty_cmd_completion
-	unset SUPPORTED_SHOPTS ENABLE_SHOPTS
-	## Use local .inputrc if it exists, rather than predefined
-    [ -n "$INPUTRC" -a -r ~/.inputrc ] && unset INPUTRC ## export INPUTRC=~/.inputrc
 fi
 
 ###############################################################################
@@ -75,7 +70,28 @@ fi
 ## (only need to set this for level 2 since it propagates down; except for ... ???
 ## "-o -r /etc/bash.bashrc -a $SHLVL -gt 1" is for those systems where it calls .profile, I think.
 #[ "$SHLVL" -a $SHLVL -eq 2 -o -r /etc/bash.bashrc -a $SHLVL -gt 1 ] && export PS1='[$SHLVL] '$PS1
-[ "$SHLVL" -a $SHLVL -eq 2 ] && PS1='[$SHLVL] '$PS1
+#[ "$SHLVL" -a $SHLVL -eq 2 ] && PS1='[$SHLVL] '$PS1
+#remove '\n' from PS1 until we can fix it so that .profile's PS1 setting
+#is called for sub-shells too.
+#[ -n "$SHLVL" -a $SHLVL -gt 1 ] && PS1='[$SHLVL] '${PS1/\\n/}
+## Flag > primary shells w/shellcount
+#echo "==== .bashrc: [$SHLVL] $(date) $(tty)::$- ======================================">>~/login.log
+#env|sort>>~/login.log
+if [ -n "$SESSION_MANAGER" -a $SHLVL -gt 2 ]; then
+	export PS1=$t_green'[$(($SHLVL-1))] '${ps1:-"$PS1"}
+elif [ -z "$SESSION_MANAGER" -a $SHLVL -gt 1 ]
+	then export PS1=$t_green'[$SHLVL] '${ps1:-"$PS1"}
+fi
+
+# Since this shell is interactive, turn on programmable completion enhancements.
+SUPPORTED_SHOPTS=`shopt|sed '1 s/^/:/;:a;${s/ .*/:/;q};N;s/[\t ].*\n/:/;ba;'`
+ENABLE_SHOPTS=
+[ ! "${SUPPORTED_SHOPTS/:autocd:/}" = "$SUPPORTED_SHOPTS" ] && ENABLE_SHOPTS+=" autocd"
+[ ! "${SUPPORTED_SHOPTS/:completion_strip_exe:/}" = "$SUPPORTED_SHOPTS" ] && ENABLE_SHOPTS+=" completion_strip_exe"
+ type shopt &>/dev/null && shopt -s $ENABLE_SHOPTS cdspell checkwinsize cmdhist histreedit histappend nocasematch no_empty_cmd_completion
+unset SUPPORTED_SHOPTS ENABLE_SHOPTS
+## Use local .inputrc if it exists, rather than predefined
+ [ -n "$INPUTRC" -a -r ~/.inputrc ] && unset INPUTRC ## export INPUTRC=~/.inputrc
 
 ## "complete" def'ns are not inherited in sub-shells
 ##    Source any global comletions
@@ -84,7 +100,7 @@ if [ -r /etc/bash_completion ]; then
 	## This assumes that the global bash_completion will call ~/.bash_completion.
 	## !!! This might not be true for some systems, need to check that
 	##     ~/.bash_completion was invoked by /etc/bash_completion
-elif `type complete &>/dev/null`; then
+elif type complete &>/dev/null; then
 	if [ -r ~/.bash_completion ]; then
 		. ~/.bash_completion
 	else  ## Some defaults in case .bash_completion doesn't exist
@@ -93,13 +109,13 @@ elif `type complete &>/dev/null`; then
 			COMPREPLY=(`grep "^Host\W$2" ~/.ssh/config |sed "s/Host[ \t]*//"|tr "\n" " "`)
 			[ "$2" -a "$REPLY" ] && export COMPREPLY
 			}
-			`complete -p ssh &>/dev/null` || complete -F compl_sshhosts ssh
-			`complete -p scp &>/dev/null` || complete -F compl_sshhosts -S ":" -o default scp
+			complete -p ssh &>/dev/null || complete -F compl_sshhosts ssh
+			complete -p scp &>/dev/null || complete -F compl_sshhosts -S ":" -o default scp
 		fi
-		`complete -p shopt &>/dev/null` || complete -A shopt -W "-p -s -u -q -o" shopt
-		`complete -p man &>/dev/null` || complete -c man
-		`complete -p cd &>/dev/null` || complete -d cd
-		`complete -p svn &>/dev/null` || complete -W "add checkout cleanup commit copy cp delete remove rm diff export help import info list ls lock log merge mkdir move mv rename propdel pdel propedit pedit propget pget proplist plist propset pset ps resolved revert status switch unlock update blame praise annotate" -f svn
+		complete -p shopt &>/dev/null || complete -A shopt -W "-p -s -u -q -o" shopt
+		complete -p man &>/dev/null || complete -c man
+		complete -p cd &>/dev/null || complete -d cd
+		complete -p svn &>/dev/null || complete -W "add checkout cleanup commit copy cp delete remove rm diff export help import info list ls lock log merge mkdir move mv rename propdel pdel propedit pedit propget pget proplist plist propset pset ps resolved revert status switch unlock update blame praise annotate" -f svn
 	fi
 fi
 ## aliases are not inherited when sub-shell is invoked
