@@ -59,10 +59,10 @@ if [ "$SHLVL" -a $SHLVL -eq 1 ]; then
 #    esac
 
 	# Since this shell is interactive, turn on programmable completion enhancements.
-	SUPPORTED_SHOPTS=`shopt`
+	SUPPORTED_SHOPTS=`shopt|sed '1 s/^/:/;:a;${s/ .*/:/;q};N;s/[\t ].*\n/:/;ba;'`
 	ENABLE_SHOPTS=
-	[ ! "${SUPPORTED_SHOPTS/autocd /}" = "$SUPPORTED_SHOPTS" ] && ENABLE_SHOPTS+=" autocd"
-	[ ! "${SUPPORTED_SHOPTS/completion_strip_exe /}" = "$SUPPORTED_SHOPTS" ] && ENABLE_SHOPTS+=" completion_strip_exe"
+	[ ! "${SUPPORTED_SHOPTS/:autocd:/}" = "$SUPPORTED_SHOPTS" ] && ENABLE_SHOPTS+=" autocd"
+	[ ! "${SUPPORTED_SHOPTS/:completion_strip_exe:/}" = "$SUPPORTED_SHOPTS" ] && ENABLE_SHOPTS+=" completion_strip_exe"
     `type shopt &>/dev/null` && shopt -s $ENABLE_SHOPTS cdspell checkwinsize cmdhist histreedit histappend nocasematch no_empty_cmd_completion
 	unset SUPPORTED_SHOPTS ENABLE_SHOPTS
 	## Use local .inputrc if it exists, rather than predefined

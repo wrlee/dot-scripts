@@ -15,16 +15,19 @@
 ## TODO: Set ENV to refer to this script for those things that need to be
 ##       repreated in secondary, non-Bash shells.
 ##
+## 2017.10.11 Generalize setting of colored PS1 prompt, setting $color_prompt
+##          - Inlcude ~/.local/bin to PATH
 [ "$RUN_PROFILE" ] && return
 #echo `basename $BASH_SOURCE`...
 RUN_PROFILE=true
 
 ## Include user's private paths, if they exist
 if [ -d ~/pear/bin ]
-	then export PATH="~/pear/bin":$PATH
-	elif [ -d ~/pear ]; then export PATH="~/pear":$PATH
+	then export PATH=~/pear/bin:$PATH
+	elif [ -d ~/pear ]; then export PATH=~/pear:$PATH
 fi
 [ -d ~/bin ] && export PATH=~/bin:$PATH
+[ -d ~/.local/bin ] && export PATH=~/.local/bin:$PATH
 [ -d /Applications/Xcode.app/Contents/Developer/usr/bin ] && export PATH=$PATH:/Applications/Xcode.app/Contents/Developer/usr/bin
 [ -d ~/lib ] && export LD_LIBRARY_PATH=~/lib:$LD_LIBRARY_PATH
 [ -d "${HOME}/man" ] && export MANPATH=${HOME}/man:${MANPATH}
@@ -38,9 +41,29 @@ case "$-" in
 	*i*)
 	;;
 	*)	unset RUN_PROFILE
-		exit
+		return
 	;;
 esac
+
+# set a fancy prompt (non-color, unless we know we "want" color)
+case "$TERM" in
+    xterm|xterm-color|*-256color|cygwin) color_prompt=yes;;
+esac
+
+# uncomment for a colored prompt, if the terminal has the capability; turned
+# off by default to not distract the user: the focus in a terminal window
+# should be on the output of commands, not on the prompt
+#force_color_prompt=yes
+if [ -n "$force_color_prompt" ]; then
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+		# We have color support; assume it's compliant with Ecma-48
+		# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+		# a case would tend to support setf rather than setaf.)
+		color_prompt=yes
+    else
+		color_prompt=
+    fi
+fi
 
 ## Try to set prompt based on generic context. If on a local private machine
 ## (e.g., cygwin, Mac), just use nice date/time.  If ssh/telnet remotely,
@@ -60,7 +83,8 @@ esac
 ##
 _ESC='\e'
 [ -z "$BASH" ] && _ESC=''
-if [ -t 1 -a -z "${TERM##xterm*}" ]; then
+#if [ -t 1 -a -z "${TERM##xterm*}" -o "$TERM" = cygwin ]; then
+if [ -t 1 -a "$color_prompt" = yes ]; then
 	t_reset='\['$_ESC'[0m\]'
 	t_yellow='\['$_ESC'[33m\]'
 	t_cyan='\['$_ESC'[36m\]'
@@ -69,26 +93,15 @@ if [ -t 1 -a -z "${TERM##xterm*}" ]; then
 	# See also $PROMPT_COMMAND
 	[ -n "$BASH_VERSION" ] && trap "echo -ne \"\033[0m\"" DEBUG && PS_input="$t_cyan"
 fi
+unset color_prompt force_color_prompt
+
 ## Set up prompt colors (maybe)
 PS_W="$t_brightCyan\w$t_reset"	## Path
 PS_H="$t_yellow\h$t_reset"		## Host
 PS_U="$t_yellow\u$t_reset"		## User
 PS_dT="$t_green\d \t$t_reset"	## Date time
 unset t_yellow t_cyan t_brightCyan t_green
-# case "$TERM" in
-# cygwin|xterm*)
-# 	t_reset='\[\033[00m\]'
-# 	trap 'echo -ne "\033[00m"' DEBUG && PS_input='\[\033[36m\]'
-#     PS_W="\[\033[01;36m\]\w$t_reset"
-#     PS_H="\[\033[33m\]\h$t_reset"
-#     PS_U="\[\033[33m\]\u$t_reset"
-#     ;;
-# *)
-#     PS_W="\w"
-#     PS_H="\h"
-#     PS_H="\u"
-#     ;;
-# esac
+
 PS_CHAR='$'
 #if which id >/dev/null 2>&1;
 #   then [ `id -u` -eq 0 ] && PS_CHAR='#'
@@ -105,7 +118,7 @@ if [ -z "$HOSTNAME" ]; then		## Non-bash--probably remote, embedded.
 elif [ "$SSH_CLIENT" -o "$MAIL" ]; then
 	PS1=$t_reset$PS_U'@\h:'$PS_W' \n\'$PS_CHAR' '$PS_input
 #	PS1='\['$_ESC']0;\u@\h:\w\a\]'$PS1
-	_title='\u:\w'
+	_title='[\u@\h] \w'
 else 										## Local machine or embedded device
 	PS1="$t_reset$PS_dT $PS_W\n"$PS_CHAR" $PS_input"
 	case $OSTYPE in
@@ -169,8 +182,7 @@ else
    [ -r ~/.profile_local -a -f ~/.profile_local ] && . ~/.profile_local
 fi
 
-if [ -r ~/.cwd ]; then
-	[ -d "`tail -1 ~/.cwd`" ] && cd `tail -1 ~/.cwd`
-fi
+## Restore last current directory (as remembered by ~/.cwd)
+[ -r ~/.cwd ] && [ -d "`tail -1 ~/.cwd`" ] && cd `tail -1 ~/.cwd`
 
 unset RUN_PROFILE
