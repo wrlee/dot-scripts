@@ -21,6 +21,7 @@ alias	..='cd ..'
 alias	...='cd ../..'
 alias	cd-='cd -'
 alias	cd..='cd ..'
+alias	cd...='cd ...'
 alias	cp='cp -ip'
 #which _cdd >/dev/null 2>&1 && \
 #   alias cd='. _cdd'
@@ -35,6 +36,7 @@ alias	e=edit
 alias	global='find . -depth -type d  -exec '	## Use '{}' & to suffix with \;
 #alias	go='. ~/bin/go'
 #alias	goto='cd `where `'
+alias	json_prettify='python -m json.tool'
 alias	l='ll -A'
 alias	la='ls -A'
 alias	ll='ls -l'
@@ -45,7 +47,8 @@ alias	mkdir='command mkdir -p'
 	alias more=less
 alias	md=mkdir
 alias	mv='mv -i'
-#alias	pg="command pg -n -s -p ' Page %d '"
+which pg >/dev/null 2>&1 && \
+	alias	pg="command pg -n -s -p ' Page %d '"
 alias	path='echo PATH=$PATH'
 if [ -e /dev/clipboard ]; then
 	alias	pbcopy='cat >/dev/clipboard'
@@ -57,20 +60,27 @@ alias	ren=mv
 alias	resolve='type -a'
 alias	scp='scp -p'
 alias	setvars="set|egrep '^[^ 	]+='"	## not prefixed with ' ' or '\t'
-which vim  >/dev/null 2>&1 && alias	vi=vim
-alias	whence='type -a'                        ## where, of a sort
-alias	where='find . -iname 2>/dev/null'
 alias	sh='$SHELL'
+which vim  >/dev/null 2>&1 && alias	vi=vim
+alias	whence='type -a'                    ## where, of a sort
+alias	where='find . -iname 2>/dev/null'
 
 if which svn >/dev/null 2>&1; then
-   alias commit='svn commit'
    alias revert='svn revert'
-   alias status='svn status'
    alias update='svn update'
+fi
+if which git >/dev/null 2>&1; then
+   alias pull='git pull'
+   alias push='git push'
+fi
+if which svn >/dev/null 2>&1 || which git >/dev/null 2>&1; then
+   alias status='[ `git rev-parse --is-inside-work-tree` = 'true' ] && git status; [ -d .svn ] && svn status'
+   alias commit='[ `git rev-parse --is-inside-work-tree` = 'true' ] && git commit "$@"; [ -d .svn ] && svn commit'
 fi
 
 cd()
 {
+   [ "$1" = "--" ] && shift
    local x1=$*
    local x2
 	until [ "$x1" = "$x2" ]; do
@@ -83,7 +93,7 @@ cd()
 #   else
 #       command cd "${x1:-$HOME}";
 #   fi
-       command cd "${x1:--}";
+    command cd "${x1:--}";
 }
 
 diff() {
@@ -139,9 +149,9 @@ go() {
 	fi
 	[ $OPTIND -gt 0 ] && shift $(($OPTIND-1));
 #	[ -r ~/.go ] && cd `awk "/^$1[ \t]/ { GOPATH=\\$2 } END { printf \"%s\", GOPATH }" ~/.go|sed "s%~%$HOME%"`
-	[ -r ~/.go ] && cd "`grep -i '^'$1'[ \t]' ~/.go |cut -d ' ' -f 2-|tail -1`"
+	[ -r ~/.go ] && cd "`command grep -i '^'$1'[ \t]' ~/.go |cut -d ' ' -f 2-|tail -1`"
 }
-[ type complete &>/dev/null -a -r ~/.go ] && complete -W "-s $(cut -d' ' -f1 <~/.go|tr '\n' ' ')" go
+type complete &>/dev/null && [ -r ~/.go ] && complete -W "-s $(cut -d' ' -f1 <~/.go|tr '\n' ' ')" go
 
 ## Go to directory name under current directory
 goto() {
@@ -153,6 +163,8 @@ mcd() {
 	mkdir "$@" && cd "$@"
 }
 
+## Because of syntax issues w/non-Bash shells, we have to interpret
+## the function definition (only if in Bash)
 [ -n "$BASH" ] && eval '
 qenv() {
 	local vars=($(compgen -v))
@@ -167,19 +179,33 @@ qenv() {
 	done
 }'
 
+if ! which wget >/dev/null 2>&1 ; then
+	_wget() { curl "${1}" -o $(basename "${1}") ; };
+	alias wget='_wget'
+fi
+
 ## OS exceptions
 ## Enable color feature of select commands
 case "$OSTYPE" in
    darwin*)                                ## Apple/Mac specific
       alias	ls='ls -GF'
-      alias	start=open
       alias	dir='ls -goG'
+      alias	imgcat='iterm_imgcat'
+      alias	start=open
       ;;
    cygwin)
-      alias start=cygstart
-      alias open=cygstart
       alias	ls='ls --color -F'
       alias	dir='ls -gG'
+	  mklink() {
+			if [ -z "$1" ]; then
+				echo -e "Make NTFS junction.\n\n\tForm: $FUNCNAME target_dir junction_name\n"
+				return 1
+			fi
+      		cmd /c mklink /j "$2" "$1"
+	  }
+      alias open=cygstart
+      alias start=cygstart
+      alias sudo="cygstart --action=runas"
       ;;
    *)
       if [ ! \( -d /jffs -a -d /cifs1 \) ]; then ## !Apple and !Tomato router

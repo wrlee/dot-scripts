@@ -20,6 +20,10 @@
 RUN_PROFILE=true
 
 ## Include user's private paths, if they exist
+if [ -d ~/pear/bin ]
+	then export PATH="~/pear/bin":$PATH
+	elif [ -d ~/pear ]; then export PATH="~/pear":$PATH
+fi
 [ -d ~/bin ] && export PATH="~/bin":$PATH
 [ -d /Applications/Xcode.app/Contents/Developer/usr/bin ] && export PATH=$PATH:/Applications/Xcode.app/Contents/Developer/usr/bin
 [ -d ~/lib ] && export LD_LIBRARY_PATH=~/lib:$LD_LIBRARY_PATH
@@ -34,7 +38,7 @@ case "$-" in
 	*i*)
 	;;
 	*)	unset RUN_PROFILE
-		return
+		exit
 	;;
 esac
 
@@ -56,7 +60,7 @@ esac
 ##
 _ESC='\e'
 [ -z "$BASH" ] && _ESC=''
-if [ -t 1 -a "$TERM" = xterm ]; then
+if [ -t 1 -a -z "${TERM##xterm*}" ]; then
 	t_reset='\['$_ESC'[0m\]'
 	t_yellow='\['$_ESC'[33m\]'
 	t_cyan='\['$_ESC'[36m\]'
@@ -114,6 +118,7 @@ else 										## Local machine or embedded device
 	_title='\w'
 	[ "$MACHTYPE" == "i686-pc-cygwin" ] && _title=$MACHTYPE
 fi
+## Set window title (TERM=xterm* or rxvt*)
 [ -n "$_title" ] && PS1='\['$_ESC']0;'$_title'\a\]'$PS1
 unset _title
 unset t_reset PS_input PS_W PS_H PS_U PS_dT PS_CHAR _ESC
@@ -122,8 +127,8 @@ unset t_reset PS_input PS_W PS_H PS_U PS_dT PS_CHAR _ESC
 if type history >/dev/null 2>&1; then
     [ -z "$HISTCONTROL" ] && export HISTCONTROL=erasedups
     [ -z "$HISTFILE" ] && export HISTFILE=~/.bash_history
-    [ -z "$HISTFILESIZE" ] && export HISTFILESIZE=1500
-    [ -z "$HISTSIZE" ] && export HISTSIZE=700
+    [ -z "$HISTFILESIZE" ] && export HISTFILESIZE=2000
+    [ -z "$HISTSIZE" ] && export HISTSIZE=1000
 fi
 
 ## TODO: Test to see if path alrady exists in CDPATH
@@ -134,11 +139,13 @@ export CDPATH=.
 ## Generic *nix
 export CDPATH=$CDPATH:$HOME
 ## Windows/cygwin
-if [ "$OSTYPE" = "cygwin" ]; then
-	[ -n "$USERPROFILE" -a -d "$(cygpath "$USERPROFILE\\Documents")" ] && export CDPATH=$CDPATH:`cygpath $USERPROFILE/Documents`
-	[ "$HOME" != "`cygpath $USERPROFILE`"  ] && export CDPATH=$CDPATH:`cygpath $USERPROFILE`
-	[ -d `cygpath $HOMEDRIVE` ] && export CDPATH=$CDPATH:`cygpath $HOMEDRIVE`:/cygdrive
-fi
+#if [ "$OSTYPE" = "cygwin" ]; then
+#	[ -n "$USERPROFILE" -a -d "$(cygpath "$USERPROFILE\\Documents")" ] && export CDPATH=$CDPATH:`cygpath $USERPROFILE/Documents`
+#	[ "$HOME" != "`cygpath $USERPROFILE`"  ] && export CDPATH=$CDPATH:`cygpath $USERPROFILE`
+#	[ -d `cygpath $HOMEDRIVE` ] && export CDPATH=$CDPATH:`cygpath $HOMEDRIVE`:/cygdrive
+#fi
+[ -d /cygdrive ] && export CDPATH=$CDPATH:/cygdrive
+[ -d /mnt ] && export CDPATH=$CDPATH:/mnt
 
 [ -r ~/.p4config ] && export P4CONFIG=~/.p4config
 

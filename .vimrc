@@ -6,7 +6,8 @@ set hidden
 
 if has('syntax')
 	syntax enable
-	colorscheme evening
+	"colorscheme evening
+	colorscheme desert
 	"hi Comment ctermfg=cyan
 endif
 if has('filetype')
@@ -18,6 +19,12 @@ set autoindent
 if has('autocmd')
 "	autocmd!
 	autocmd BufNewFile,BufRead *.json set filetype=json
+	autocmd Filetype php setlocal nobomb ff=unix
+" Return to last edit position when opening files (You want this!)
+	autocmd BufReadPost *
+     \ if line("'\"") > 0 && line("'\"") <= line("$") |
+     \    exe "normal! g`\"" |
+     \ endif
 endif
 
 " Show row,column at the bottom
@@ -31,12 +38,5 @@ set lazyredraw
 " 1 tab == 4 spaces
 set shiftwidth=4
 set tabstop=4
-" Return to last edit position when opening files (You want this!)
-if has('autocmd')
-	autocmd BufReadPost *
-     \ if line("'\"") > 0 && line("'\"") <= line("$") |
-     \    exe "normal! g`\"" |
-     \ endif
-endif
 " Remember info about open buffers on close
 set viminfo^=%
