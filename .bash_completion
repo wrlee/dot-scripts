@@ -11,22 +11,23 @@
 RUN_BASH_COMPLETION=true
 #echo .bash_completion...
 
-
 ## Run all scripts in completion directories
-for dir in ~/.bash_completion.d; do
+# /usr/local/Homebrew/completions/bash/
+# /usr/share/bash-completion/completions/
+for dir in /Applications/Docker.app/Contents/Resources/etc /usr/local/etc/bash_completion.d ~/.bash_completion.d; do
+	found=0
 	[ -d "$dir" ] && for script in "${dir}"/*; do
-#		[ -x "$script" ] && echo "$script" is executable
-#		[ -x "$script" ] && type -t `basename "$script"`&>/dev/null && echo `basename "$script"` command exists
 #		[ -x "$script" ] && type -t `basename "$script"`&>/dev/null && complete -p `basename "$script"` &>/dev/null || echo to be completed
 		## If executable script exists and its name is that of a valid command and a completion isn't already defined.
 		## Need to wrap actual execution in if..else..fi because || would act as an "otherwise" and () wont work
-		[ -x "$script" ] && type -t `basename "$script"`&>/dev/null && if complete -p `basename "$script"` &>/dev/null; then true; else
-			echo Completion for `basename "$script"`...
+		[ -x "$script" ] && type -t `basename "${script%.bash-completion}"`&>/dev/null && if complete -p `basename "$script"` &>/dev/null; then true; else
+			[ $found -eq 0 ] && echo -n "Completion:  `basename "$script"`" && found=1 || echo -n ", `basename "$script"`"
 			. "$script"
 		fi
 	done
+	[ $found -gt 0 ] && echo ...
 done
-unset dir script
+unset dir script found
 
 ## Override or simple additions to command completions
 function _compl_sshhosts() {
