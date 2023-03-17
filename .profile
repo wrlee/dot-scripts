@@ -16,23 +16,27 @@
 ##       repreated in secondary, non-Bash shells.
 ##
 ## 2017.10.11 Generalize setting of colored PS1 prompt, setting $color_prompt
-##          - Inlcude ~/.local/bin to PATH
+##          - Include ~/.local/bin to PATH
 [ "$RUN_PROFILE" ] && return
 #echo `basename $BASH_SOURCE`...
 RUN_PROFILE=true
 
 ## Include user's private paths, if they exist
-if [ -d ~/pear/bin ]
-	then export PATH=~/pear/bin:$PATH
-	elif [ -d ~/pear ]; then export PATH=~/pear:$PATH
+## Prefix paths
+_paths_prefix=(~/go/bin ~/".local/bin" ~/"bin" ~/"anaconda3/bin" ~/"pear/bin" "/usr/local/mysql/bin")
+if [ ! -d ~/pear/bin ];
+	then _paths_prefix+=(~/pear)
 fi
-[ -d ~/bin ] && export PATH=~/bin:$PATH
-[ -d ~/.local/bin ] && export PATH=~/.local/bin:$PATH
-[ -d /Applications/Xcode.app/Contents/Developer/usr/bin ] && export PATH=$PATH:/Applications/Xcode.app/Contents/Developer/usr/bin
-[ -d ~/lib ] && export LD_LIBRARY_PATH=~/lib:$LD_LIBRARY_PATH
-[ -d "${HOME}/man" ] && export MANPATH=${HOME}/man:${MANPATH}
-[ -d "${HOME}/info" ] && export INFOPATH=${HOME}/info:${INFOPATH}
+for i in ${_paths_prefix[@]}; do
+	[ -d "$i" ] && PATH=$i:$PATH
+done
+unset _paths_prefix
+[ -d /Applications/Xcode.app/Contents/Developer/usr/bin ] && PATH+=:/Applications/Xcode.app/Contents/Developer/usr/bin
 export PATH=.:$PATH
+
+[ -d ~/lib ] && export LD_LIBRARY_PATH=~/lib:$LD_LIBRARY_PATH
+[ -d ~/man ] && export MANPATH=~/man:${MANPATH}
+[ -d ~/info ] && export INFOPATH=~/info:${INFOPATH}
 
 ## Ensure interactive shell...
 ## Could also check that $- does not contain 'i': case $-; *i*) ...;; *) ...;; esac
@@ -45,103 +49,129 @@ case "$-" in
 	;;
 esac
 
-# set a fancy prompt (non-color, unless we know we "want" color)
-case "$TERM" in
-    xterm|xterm-color|*-256color|cygwin) color_prompt=yes;;
-esac
+setPrompt()
+{
+	local color_prompt force_color_prompt
+	# set a fancy prompt (non-color, unless we know we "want" color)
+	case "$TERM" in
+	   xterm|xterm-color|*-256color|cygwin)
+		 	color_prompt=yes
+			;;
+		*) which tput >/dev/null && [ $(tput colors) -ge 8 ] && color_prompt=yes
+			;;
 
-# uncomment for a colored prompt, if the terminal has the capability; turned
-# off by default to not distract the user: the focus in a terminal window
-# should be on the output of commands, not on the prompt
-#force_color_prompt=yes
-if [ -n "$force_color_prompt" ]; then
-    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-		# We have color support; assume it's compliant with Ecma-48
-		# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
-		# a case would tend to support setf rather than setaf.)
-		color_prompt=yes
-    else
-		color_prompt=
-    fi
-fi
-
-## Try to set prompt based on generic context. If on a local private machine
-## (e.g., cygwin, Mac), just use nice date/time.  If ssh/telnet remotely,
-## show hostname. If remoting into a multi-user system show user and host names.
-##
-## Sets multiple display attribute settings:
-##	<ESC>[{attr1};...;{attrn}m
-##
-##  Attribute	      Colours	Foreground	Background
-##   0	Reset all     Black		30	40
-##   1	Bright        Red		31	41
-##   2	Dim           Green		32	42
-##   4	Underscore    Yellow	33	43
-##   5	Blink         Blue		34	44
-##   7	Reverse       Cyan		36	46
-##   8	Hidden        White		37	47
-##
-_ESC='\e'
-[ -z "$BASH" ] && _ESC=''
-#if [ -t 1 -a -z "${TERM##xterm*}" -o "$TERM" = cygwin ]; then
-if [ -t 1 -a "$color_prompt" = yes ]; then
-	t_reset='\['$_ESC'[0m\]'
-	t_yellow='\['$_ESC'[33m\]'
-	t_cyan='\['$_ESC'[36m\]'
-	t_brightCyan='\['$_ESC'[01;36m\]'
-	t_green='\['$_ESC'[32m\]'
-	# See also $PROMPT_COMMAND
-	[ -n "$BASH_VERSION" ] && trap "echo -ne \"\033[0m\"" DEBUG && PS_input="$t_cyan"
-fi
-unset color_prompt force_color_prompt
-
-## Set up prompt colors (maybe)
-PS_W="$t_brightCyan\w$t_reset"	## Path
-PS_H="$t_yellow\h$t_reset"		## Host
-PS_U="$t_yellow\u$t_reset"		## User
-PS_dT="$t_green\d \t$t_reset"	## Date time
-unset t_yellow t_cyan t_brightCyan t_green
-
-PS_CHAR='$'
-#if which id >/dev/null 2>&1;
-#   then [ `id -u` -eq 0 ] && PS_CHAR='#'
-#   else [ "$LOGNAME" = root ] && PS_CHAR='#'
-#fi
-#export PS1="[`hostname|cut -d . -f 1`] \$PWD \$ "
-#echo ...$HOSTNAME---$SSH_CLIENT---$MAIL...
-if [ -z "$HOSTNAME" ]; then		## Non-bash--probably remote, embedded.
-	PS1=$t_reset$PS_H':'$PS_W' \n\'$PS_CHAR' '$PS_input
-#	PS1='\['$_ESC']0;\h:\w\a\]'$PS1
-	_title='\h:\w'
-											## Shared host: username@host
-#elif [ "$SSH_CLIENT" -o "$MAIL" ] && [ "$USER" != "root" ]; then
-elif [ "$SSH_CLIENT" -o "$MAIL" ]; then
-	PS1=$t_reset$PS_U'@\h:'$PS_W' \n\'$PS_CHAR' '$PS_input
-#	PS1='\['$_ESC']0;\u@\h:\w\a\]'$PS1
-	_title='[\u@\h] \w'
-else 										## Local machine or embedded device
-	PS1="$t_reset$PS_dT $PS_W\n"$PS_CHAR" $PS_input"
-	case $OSTYPE in
-	cygwin*)
-		;;
-	*arm*)	## cygwin PS1='\['$_ESC']0;\w\a\]\n\['$_ESC'[32m\]\u@\h \['$_ESC'[33m\]\w\['$_ESC'[0m\]\n\'$PS_CHAR' '
-		PS1=$t_reset$PS_H': '$PS1
-		;;
 	esac
-	_title='\w'
-	[ "$MACHTYPE" == "i686-pc-cygwin" ] && _title=$MACHTYPE
+
+	# uncomment for a colored prompt, if the terminal has the capability; turned
+	# off by default to not distract the user: the focus in a terminal window
+	# should be on the output of commands, not on the prompt
+	#force_color_prompt=yes
+	if [ -n "$force_color_prompt" ]; then
+	    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+			# We have color support; assume it's compliant with Ecma-48
+			# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+			# a case would tend to support setf rather than setaf.)
+			color_prompt=yes
+	    else
+			color_prompt=
+	    fi
+	fi
+
+	## Try to set prompt based on generic context. If on a local private machine
+	## (e.g., cygwin, Mac), just use nice date/time.  If ssh/telnet remotely,
+	## show hostname. If remoting into a multi-user system show user and host names.
+	##
+	## Sets multiple display attribute settings:
+	##	<ESC>[{attr1};...;{attrn}m
+	##
+	##  Attribute	      Colours	Foreground	Background
+	##   0	Reset all     Black		30	40
+	##   1	Bright        Red		31	41
+	##   2	Dim           Green		32	42
+	##   4	Underscore    Yellow	33	43
+	##   5	Blink         Blue		34	44
+	##   7	Reverse       Cyan		36	46
+	##   8	Hidden        White		37	47
+	##
+	local t_reset t_yellow t_cyan t_brightCyan t_green PS_input PS_W PS_H PS_U PS_dT _ESC
+	_ESC='\e'
+	[ -z "$BASH" ] && _ESC=''
+	#if [ -t 1 -a -z "${TERM##xterm*}" -o "$TERM" = cygwin ]; then
+	if [ -t 1 -a "$color_prompt" = yes ]; then
+		t_reset='\['$_ESC'[0m\]'
+		t_yellow='\['$_ESC'[33m\]'
+		t_cyan='\['$_ESC'[36m\]'
+		t_brightCyan='\['$_ESC'[01;36m\]'
+		t_green='\['$_ESC'[32m\]'
+		# See also $PROMPT_COMMAND
+		[ -n "$BASH_VERSION" ] && trap "echo -ne \"\033[0m\"" DEBUG && PS_input="$t_cyan"
+	fi
+	unset color_prompt force_color_prompt
+
+	## Set up prompt colors (maybe)
+	PS_W="$t_brightCyan\w$t_reset"	## Path
+	PS_H="$t_yellow\h$t_reset"		## Host
+	PS_U="$t_yellow\u$t_reset"		## User
+	PS_dT="$t_green\d \t$t_reset"	## Date time
+	unset t_yellow t_cyan t_brightCyan t_green
+
+	local PS_CHAR='$' _title
+	#if which id >/dev/null 2>&1;
+	#   then [ `id -u` -eq 0 ] && PS_CHAR='#'
+	#   else [ "$LOGNAME" = root ] && PS_CHAR='#'
+	#fi
+	#export PS1="[`hostname|cut -d . -f 1`] \$PWD \$ "
+	#echo ...$HOSTNAME---$SSH_CLIENT---$MAIL...
+	if [ -z "$HOSTNAME" ]; then		## Non-bash--probably remote, embedded.
+		PS1=$t_reset$PS_H':'$PS_W' \n\'$PS_CHAR' '$PS_input
+	#	PS1='\['$_ESC']0;\h:\w\a\]'$PS1
+		_title='\h:\w'
+												## Shared host: username@host
+	#elif [ "$SSH_CLIENT" -o "$MAIL" ] && [ "$USER" != "root" ]; then
+	elif [ "$SSH_CLIENT" -o "$MAIL" ]; then
+		PS1=$t_reset$PS_U'@\h:'$PS_W' \n\'$PS_CHAR' '$PS_input
+	#	PS1='\['$_ESC']0;\u@\h:\w\a\]'$PS1
+		_title='[\u@\h] \w'
+	else 										## Local machine or embedded device
+		PS1="$t_reset$PS_dT $PS_W\n"$PS_CHAR" $PS_input"
+		case $OSTYPE in
+		cygwin*)
+			;;
+		*arm*)	## cygwin PS1='\['$_ESC']0;\w\a\]\n\['$_ESC'[32m\]\u@\h \['$_ESC'[33m\]\w\['$_ESC'[0m\]\n\'$PS_CHAR' '
+			PS1=$t_reset$PS_H': '$PS1
+			;;
+		esac
+		_title='\w'
+		[ "$MACHTYPE" == "i686-pc-cygwin" ] && _title=$MACHTYPE
+	fi
+	## Flag > primary shells w/shellcount
+	#if [ -n "$SESSION_MANAGER" -a $SHLVL -gt 2 ]; then
+	#	PS1=$t_green'[$(($SHLVL-1))] '$PS1
+	#elif [ $SHLVL -gt 1 ]
+	#	then PS1=$t_green'[$SHLVL] '$PS1
+	#fi
+	## Set window title (TERM=xterm* or rxvt*)
+	[ -n "$_title" ] && PS1='\['$_ESC']0;'$_title'\a\]'$PS1
+	unset _title
+	unset t_reset PS_input PS_W PS_H PS_U PS_dT PS_CHAR _ESC
+	export PS1 ps1="$PS1"
+} ## setPrompt
+
+#echo "==== .profile: [$SHLVL] $(date) $(tty)::$- ======================================">>~/login.log
+#env|sort>>~/login.log
+setPrompt
+
+if [ "$1" = "PS" -o "$1" = "prompt" ]; then
+	unset RUN_PROFILE
+	return
 fi
-## Set window title (TERM=xterm* or rxvt*)
-[ -n "$_title" ] && PS1='\['$_ESC']0;'$_title'\a\]'$PS1
-unset _title
-unset t_reset PS_input PS_W PS_H PS_U PS_dT PS_CHAR _ESC
 
 ## Enable history, if available 'set -o history' 'set -H'
 if type history >/dev/null 2>&1; then
     [ -z "$HISTCONTROL" ] && export HISTCONTROL=erasedups
     [ -z "$HISTFILE" ] && export HISTFILE=~/.bash_history
-    [ -z "$HISTFILESIZE" ] && export HISTFILESIZE=2000
-    [ -z "$HISTSIZE" ] && export HISTSIZE=1000
+    [ -z "$HISTFILESIZE" ] && export HISTFILESIZE=5000
+    [ -z "$HISTSIZE" ] && export HISTSIZE=2500
 fi
 
 ## TODO: Test to see if path alrady exists in CDPATH
@@ -154,15 +184,16 @@ if [ "$OSTYPE" = "cygwin" ]; then
 	[ -n "$__docdir" -a -d "$__docdir" -a ! "$__docdir" -ef "$HOME/Documents" ] && CDPATH=$CDPATH:$__docdir
 	unset __docdir
 	[ ! "$HOME" -ef "`cygpath $USERPROFILE`"  ] && CDPATH=$CDPATH:`cygpath $USERPROFILE`
-	#	[ -d `cygpath $HOMEDRIVE` ] && CDPATH=$CDPATH:`cygpath $HOMEDRIVE`:/cygdrive
+#	[ -d `cygpath $HOMEDRIVE` ] && CDPATH=$CDPATH:`cygpath $HOMEDRIVE`:/cygdrive
 	[ -d /cygdrive ] && CDPATH=$CDPATH:/cygdrive
+	export CYGWIN=winsymlinks:nativestrict
 fi
 ## Generic *nix & MacOS
 [ -d $HOME/Documents ] && CDPATH=$CDPATH:$HOME/Documents
 export CDPATH=$CDPATH:$HOME
 [ -d /mnt ] && export CDPATH=$CDPATH:/mnt
 
-[ -r ~/.p4config ] && export P4CONFIG=~/.p4config
+#[ -r ~/.p4config ] && export P4CONFIG=~/.p4config
 
 # function settitle() { echo -n "^[]2;$@^G^[]1;$@^G"; }
 

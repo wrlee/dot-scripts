@@ -9,11 +9,25 @@
 ## 2016/01/16 Only define qenv if being run under Bash (syntax problems with sh)
 ##          - Run ~/.local_alias, if it exists.
 ##          - Change builtin to command for sh compatability.
+## 2017/10/11 Determine --color option support algorithmicly
 
 #echo .alias...
 
 ## Use builtin 'type' rather than extenal 'which'
 #type 2>/dev/null && alias which=type
+
+if [ -x /usr/bin/dircolors ]; then
+#   test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+	COLORIZE='--color=auto'
+#   alias ls='ls --color=auto'
+    #alias dir='dir --color=auto'
+    #alias vdir='vdir --color=auto'
+
+#   alias grep='grep --color=auto'
+#   alias fgrep='fgrep --color=auto'
+#   alias egrep='egrep --color=auto'
+fi
+
 
 which /bin/busybox* >/dev/null 2>&1 && \
    alias bb=`command ls /bin/busybox*|tail -1`
@@ -27,21 +41,20 @@ alias	cp='cp -ip'
 #which _cdd >/dev/null 2>&1 && \
 #   alias cd='. _cdd'
 which clear >/dev/null 2>&1 && \
-   alias cls=clear
+   alias cls='clear && printf "\e[3J"'
 alias	d=dir
 alias	df='df -h'
 alias	du='du -h'
-alias	dir='ls -l'
 alias	del=rm
 alias	e=edit
 alias	global='find . -depth -type d  -exec '	## Use '{}' & to suffix with \;
 #alias	go='. ~/bin/go'
 #alias	goto='cd `where `'
 alias	json_prettify='python -m json.tool'
-alias	l='ll -A'
-alias	la='ls -A'
-alias	ll='ls -l'
-alias	ls='ls -F'
+alias	ll='l -A'
+alias	la="ls -A $COLORIZE"
+alias	l="ls -l $COLORIZE"
+alias	ls="ls -F $COLORIZE"
 #alias	less='less -r'                          # raw control characters
 alias	mkdir='command mkdir -p'
 ! which more  >/dev/null 2>&1 && \
@@ -74,10 +87,17 @@ if which git >/dev/null 2>&1; then
    alias pull='git pull'
    alias push='git push'
 fi
-if which svn >/dev/null 2>&1 || which git >/dev/null 2>&1; then
-   alias status='[ `git rev-parse --is-inside-work-tree` = 'true' ] && git status; [ -d .svn ] && svn status'
-   alias commit='[ `git rev-parse --is-inside-work-tree` = 'true' ] && git commit "$@"; [ -d .svn ] && svn commit'
+if which git >/dev/null 2>&1; then
+   commit() {
+      [ `git rev-parse --is-inside-work-tree` = 'true' ] && git commit "$@"
+   }
+   alias status='[ `git rev-parse --is-inside-work-tree` = 'true' ] && git filestatus'
+   alias clone='git clone'
 fi
+#if which svn >/dev/null 2>&1 || which git >/dev/null 2>&1; then
+#   alias status='[ `git rev-parse --is-inside-work-tree` = 'true' ] && git status; [ -d .svn ] && svn status'
+#   alias commit='[ `git rev-parse --is-inside-work-tree` = 'true' ] && git commit "$@"; [ -d .svn ] && svn commit'
+#fi
 
 cd()
 {
@@ -195,7 +215,7 @@ case "$OSTYPE" in
       alias	start=open
       ;;
    cygwin)
-      alias	ls='ls --color -F'
+#     alias	ls='ls --color -F'
       alias	dir='ls -gG'
 	  mklink() {
 			if [ -z "$1" ]; then
@@ -208,7 +228,9 @@ case "$OSTYPE" in
       alias start=cygstart
       alias sudo="cygstart --action=runas"
       ;;
-   *)
+   linux-gnu|*)
+		which xdg-open >/dev/null 2>&1 && \
+   			alias open=xdg-open && alias start=xdg-open
       if [ ! \( -d /jffs -a -d /cifs1 \) ]; then ## !Apple and !Tomato router
          alias	ls='ls --color -F'
       fi
@@ -217,3 +239,5 @@ esac
 [ -n "$HOSTNAME" -a "$USER" != "root" ] && alias grep='grep --color'
 
 [ -r ~/.local_alias ] && . ~/.local_alias
+
+unset COLORIZE
