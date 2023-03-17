@@ -1,4 +1,5 @@
-# Check /usr/doc/tcsh/examples/alias to see other possible values.
+## ~/.alias:
+## @see /usr/doc/tcsh/examples/alias to see other possible values.
 ##
 ## @TODO Run ~/.bash_aliases, if it exists.
 ##
@@ -16,7 +17,7 @@
 
 which /bin/busybox* >/dev/null 2>&1 && \
    alias bb=`command ls /bin/busybox*|tail -1`
-alias	-='cd -'
+alias	-- -='cd -'
 alias	..='cd ..'
 alias	...='cd ../..'
 alias	cd-='cd -'

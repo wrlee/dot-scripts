@@ -3,9 +3,9 @@
 ## called from the corresponding .profile, when running under Bash, for
 ## bash-specific initialization when login Bash shell is invoked.
 ##
-## .bashrc  - General bash settings that also run in non-login shells
-## .alias	- [optional] Defines aliases (and functions)
-## .local   - [optional] Installation specific settings.
+## .bashrc        - General bash settings that also run in non-login shells
+## .alias         - [optional] Defines aliases (and functions)
+## .profile_local - [optional] Installation specific settings.
 ##
 ## .profile is called in traditional, non-Bash interactive shells. .bashrc
 ## is called for non-login, interactive Bash shells. This .bashrc .bashrc does
@@ -104,7 +104,7 @@ elif `type complete &>/dev/null`; then
 fi
 ## aliases are not inherited when sub-shell is invoked
 [ -r ~/.alias ] && . ~/.alias
-[ -r ~/.local -a -f ~/.local ] && . ~/.local
+[ -f ~/.local -a ! -e ~/.profile_local ] && mv ~/.local ~/.profile_local
+[ -r ~/.profile_local -a -f ~/.profile_local ] && . ~/.profile_local
 
 unset RUN_BASHRC
-

@@ -1,10 +1,10 @@
 ## ~/.profile:  Interactive login shell startup script. This startup file is
 ## called by Bash, directly, if neither .bash_profile nor .bash_login exist.
 ##
-## .profile - General settings that are not bash specific (but run in interactive shells).
-## .bashrc  - General bash settings that also run in non-login shells
-## .alias	- [optional] Defines aliases (and functions)
-## .local   - [optional] Installation specific settings.
+## .profile       - General settings that are not bash specific (but run in interactive shells).
+## .bashrc        - General bash settings that also run in non-login shells
+## .alias         - [optional] Defines aliases (and functions)
+## .profile_local - [optional] Installation specific settings.
 ##
 ## .profile is called in traditional, non-Bash interactive shells. .bashrc
 ## is called for non-login, interactive Bash shells. Under Bash, this .profile
@@ -24,7 +24,7 @@ if [ -d ~/pear/bin ]
 	then export PATH="~/pear/bin":$PATH
 	elif [ -d ~/pear ]; then export PATH="~/pear":$PATH
 fi
-[ -d ~/bin ] && export PATH="~/bin":$PATH
+[ -d ~/bin ] && export PATH=~/bin:$PATH
 [ -d /Applications/Xcode.app/Contents/Developer/usr/bin ] && export PATH=$PATH:/Applications/Xcode.app/Contents/Developer/usr/bin
 [ -d ~/lib ] && export LD_LIBRARY_PATH=~/lib:$LD_LIBRARY_PATH
 [ -d "${HOME}/man" ] && export MANPATH=${HOME}/man:${MANPATH}
@@ -73,7 +73,7 @@ fi
 PS_W="$t_brightCyan\w$t_reset"	## Path
 PS_H="$t_yellow\h$t_reset"		## Host
 PS_U="$t_yellow\u$t_reset"		## User
-PS_dT="$t_green\d \T$t_reset"	## Date time
+PS_dT="$t_green\d \t$t_reset"	## Date time
 unset t_yellow t_cyan t_brightCyan t_green
 # case "$TERM" in
 # cygwin|xterm*)
@@ -133,18 +133,20 @@ fi
 
 ## TODO: Test to see if path alrady exists in CDPATH
 ## Generic *nix
-export CDPATH=.
-## Mac OS
-[ -d $HOME/Documents ] && export CDPATH=$CDPATH:$HOME/Documents
-## Generic *nix
+CDPATH=.
+# Windows/cygwin
+if [ "$OSTYPE" = "cygwin" ]; then
+#	[ -n "$USERPROFILE" -a -d "$(cygpath "$USERPROFILE\\Documents")" ] && CDPATH=$CDPATH:`cygpath $USERPROFILE/Documents`
+	__docdir=`cygpath "$(tr -d '\0' < "/proc/registry/HKEY_CURRENT_USER/Software/Microsoft/Windows/CurrentVersion/Explorer/Shell Folders/Personal")"`
+	[ -n "$__docdir" -a -d "$__docdir" -a ! "$__docdir" -ef "$HOME/Documents" ] && CDPATH=$CDPATH:$__docdir
+	unset __docdir
+	[ ! "$HOME" -ef "`cygpath $USERPROFILE`"  ] && CDPATH=$CDPATH:`cygpath $USERPROFILE`
+	#	[ -d `cygpath $HOMEDRIVE` ] && CDPATH=$CDPATH:`cygpath $HOMEDRIVE`:/cygdrive
+	[ -d /cygdrive ] && CDPATH=$CDPATH:/cygdrive
+fi
+## Generic *nix & MacOS
+[ -d $HOME/Documents ] && CDPATH=$CDPATH:$HOME/Documents
 export CDPATH=$CDPATH:$HOME
-## Windows/cygwin
-#if [ "$OSTYPE" = "cygwin" ]; then
-#	[ -n "$USERPROFILE" -a -d "$(cygpath "$USERPROFILE\\Documents")" ] && export CDPATH=$CDPATH:`cygpath $USERPROFILE/Documents`
-#	[ "$HOME" != "`cygpath $USERPROFILE`"  ] && export CDPATH=$CDPATH:`cygpath $USERPROFILE`
-#	[ -d `cygpath $HOMEDRIVE` ] && export CDPATH=$CDPATH:`cygpath $HOMEDRIVE`:/cygdrive
-#fi
-[ -d /cygdrive ] && export CDPATH=$CDPATH:/cygdrive
 [ -d /mnt ] && export CDPATH=$CDPATH:/mnt
 
 [ -r ~/.p4config ] && export P4CONFIG=~/.p4config
@@ -156,14 +158,15 @@ if [ "$OSTYPE" = "cygwin" ]; then
 	FIGNORE=.DLL:.dll
 fi
 
-## If
+## If Bash is running, there's a local .bashrc, & it hasn't been run...
 if [ -r ~/.bashrc -a "$BASH" ]; then
    [ -z "$RUN_BASHRC" ] && . ~/.bashrc
 else
+##	Stuff that needs to be run when .bashrc isn't run
 #  [ -n "$PS1" -a -r ~/.alias ] && `alias resolve >/dev/null 2>&1` || . ~/.alias
    [ -n "$PS1" -a -r ~/.alias ] && . ~/.alias
-   ## Ensure that .local is a file (not simply readable).
-   [ -r ~/.local -a -f ~/.local ] && . ~/.local
+	[ -f ~/.local -a ! -e ~/.profile_local ] && mv ~/.local ~/.profile_local
+   [ -r ~/.profile_local -a -f ~/.profile_local ] && . ~/.profile_local
 fi
 
 if [ -r ~/.cwd ]; then
