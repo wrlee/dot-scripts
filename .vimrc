@@ -1,16 +1,17 @@
 " See http://amix.dk/vim/vimrc.html, http://nvie.com/posts/how-i-boosted-my-vim/
 
-" 'hidden' hides buffers instead of closing them, allowing unwritten changes to a file and open a new file using :e, without being forced to write or undo your changes first. Also, undo buffers and marks are preserved while the buffer is open. 
+" 'hidden' hides buffers instead of closing them, allowing unwritten changes to a file and open a new file using :e, without being forced to write or undo your changes first. Also, undo buffers and marks are preserved while the buffer is open.
 set hidden
 "set verbose=9
 
 if has('syntax')
 	syntax enable
+	colorscheme evening
+	"hi Comment ctermfg=cyan
 endif
-color desert
 if has('filetype')
 	filetype plugin indent on
-	filetype indent on 
+	filetype indent on
 endif
 set autoindent
 

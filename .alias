@@ -16,6 +16,7 @@
 
 which /bin/busybox* >/dev/null 2>&1 && \
    alias bb=`command ls /bin/busybox*|tail -1`
+alias	-='cd -'
 alias	..='cd ..'
 alias	...='cd ../..'
 alias	cd-='cd -'
@@ -136,11 +137,11 @@ go() {
 		cat ~/.go
 		return
 	fi
-	shift $(($OPTIND-1));
+	[ $OPTIND -gt 0 ] && shift $(($OPTIND-1));
 #	[ -r ~/.go ] && cd `awk "/^$1[ \t]/ { GOPATH=\\$2 } END { printf \"%s\", GOPATH }" ~/.go|sed "s%~%$HOME%"`
 	[ -r ~/.go ] && cd "`grep -i '^'$1'[ \t]' ~/.go |cut -d ' ' -f 2-|tail -1`"
 }
-[ -r ~/.go ] && complete -W "-s $(cut -d' ' -f1 <~/.go|tr '\n' ' ')" go
+[ type complete &>/dev/null -a -r ~/.go ] && complete -W "-s $(cut -d' ' -f1 <~/.go|tr '\n' ' ')" go
 
 ## Go to directory name under current directory
 goto() {

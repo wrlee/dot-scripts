@@ -1,13 +1,17 @@
 ## Set up bash completion rules
 ## If ~/.bash_completion.d directory exists, then its executable scripts are
-## if they match the name of a command.
-#[ -z "$PS1" ] && return
-#[ -n "$RUN_BASH_COMPLETION" ] && return
+## run in sequence, if they match the name of a command.
+##
+## TODO: If global /etc/bash_completion.d exists, it has probably already been
+##       run; consider not doing anything here. Though this can be checked in
+##       .bashrc  or .bash_profile
+
+## If not interactive or run already, return
 [ -z "$PS1" -o -n "$RUN_BASH_COMPLETION" ] && return
 RUN_BASH_COMPLETION=true
 #echo .bash_completion...
 
-## If global /etc/bash_completion.d exists, it has probably already been run.
+
 ## Run all scripts in completion directories
 for dir in ~/.bash_completion.d; do
 	[ -d "$dir" ] && for script in "${dir}"/*; do
