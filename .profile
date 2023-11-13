@@ -37,6 +37,7 @@ for _brew in /opt/homebrew /home/linuxbrew/.linuxbrew /usr/local; do
       break
    fi
 done
+unset _brew
 if [ -n "${HOMEBREW_PREFIX}" ]; then
    export HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}"
    export HOMEBREW_CELLAR="${HOMEBREW_PREFIX}/Cellar"
@@ -51,12 +52,13 @@ _setPath() {
    for i in "${_paths_prefix[@]}"; do
       [ -d "$i" -a "${PATH##*:"$i":*}" -a "${PATH##"$i":*}" ] && PATH=$i${PATH+:$PATH}
    done
-   local _paths_suffix=(/Library/Developer/CommandLineTools/usr/bin /Applications/Xcode.app/Contents/Developer/usr/bin)
+   local _paths_suffix=(/Library/Developer/CommandLineTools/usr/bin /Applications/Xcode.app/Contents/Developer/usr/bin ~/Library/Python/3.9/bin)
    for i in ${_paths_suffix[@]}; do
       [ -d "$i" -a "${PATH##*:"$i":*}" -a "${PATH##"$i":*}" ] && PATH+=${PATH+:}$i
    done
 } ## _setPath()
-_setPath; unset -f _setPath
+_setPath
+unset -f _setPath
 
 [ -d ~/lib ] && export LD_LIBRARY_PATH=~/lib${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}
 
@@ -166,27 +168,26 @@ if [ "$1" = "PS" -o "$1" = "prompt" ]; then
 fi
 
 _setManPath() {
-   for i in ~/man ~/.local/man ~/.local/share/man "${HOMEBREW_PREFIX:+${HOMEBREW_PREFIX}/share/man}" #/usr/share/man /usr/local/share/man
-   do
+   local i
+   for i in ~/man ~/.local/man ~/.local/share/man "${HOMEBREW_PREFIX:+${HOMEBREW_PREFIX}/share/man}"; do #/usr/share/man /usr/local/share/man
       [ -d "$i" ] && [ -z "$MANPATH" -o "${MANPATH##*:"$i":*}" -a "${MANPATH##*:"$i"}" -a "${MANPATH##"$i":*}" ] && MANPATH+=${MANPATH+:}$i
    done
+   [ -n "$MANPATH" ] && export MANPATH
    ## If $MANPATH set, ensure it includes man config file since $MANPATH supercedes the file
    if [ -n "$MANPATH" ]; then
       [ -s /etc/man.conf ] && local man_config=/etc/man.conf
       [ -s /etc/manpath.config -a -n "$man_config" ] && echo "$(basename $0) both /etc/man.conf & /etc/manpath.config exist"
       [ -s /etc/manpath.config ] && local man_config=/etc/manpath.config
       if [ -n $man_config ]; then
+         local path mapfor mapto
          ## TODO Is the following appended in the correct order?
-         for path in $(sed -E $'/^[ \t]*(MANDATORY_)?MANPATH[ \t]+/!d' $man_config)
-         do
-            [ -d "$path" ] && [ -z "$MANPATH" -o "${MANPATH##*:"$path":*}" -a "${MANPATH##*:"$path"}" -a "${MANPATH##"$path":*}" ] && MANPATH+=${MANPATH+:}$path
+         for path in $(sed -E $'/^[ \t]*(MANDATORY_)?MANPATH[ \t]+/!d' $man_config); do
+            [ -d "$path" ] && [ -z "$MANPATH" -o "${MANPATH##*:$path:*}" -a "${MANPATH##*:$path}" -a "${MANPATH##$path:*}" -a "$MANPATH" != "$path" ] && MANPATH+=${MANPATH+:}$path
          done
-         for path in $(sed -E $'/^[ \t]*MANPATH_MAP[ \t]/!d; s/^[ \t]*MANPATH_MAP[ \t]+([^ \t]+)[ \t]+([^ \t]+)$/\\1:\\2/' $man_config)
-         do
-            IFS=: read -r mapfor mapto <<< "$path"
-            if [ -d "$mapto" ] && [ -z "${PATH##*:${mapfor}:*}" -o -z "${PATH##*:${mapfor}}" -o -z "${PATH##${mapfor}:*}" ]
-            then
-               [ -z "$MANPATH" -o "${MANPATH##*:"$mapto":*}" -a "${MANPATH##*:"$mapto"}" -a "${MANPATH##"$mapto":*}" ] && MANPATH+=${MANPATH+:}$mapto
+         for path in $(sed -E $'/^[ \t]*MANPATH_MAP[ \t]/!d; s/^[ \t]*MANPATH_MAP[ \t]+([^ \t]+)[ \t]+([^ \t]+)$/\\1:\\2/' $man_config); do
+            IFS=: read -r mapfor mapto <<<"$path"
+            if [ -d "$mapto" ] && [ -z "${PATH##*:${mapfor}:*}" -o -z "${PATH##*:${mapfor}}" -o -z "${PATH##${mapfor}:*}" -o "$PATH" = "$mapfor" ]; then
+               [ -z "$MANPATH" -o "${MANPATH##*:$mapto:*}" -a "${MANPATH##*:$mapto}" -a "${MANPATH##$mapto:*}" -a "$MANPATH" != "$mapto" ] && MANPATH+=${MANPATH+:}$mapto
             fi
          done
       fi
@@ -195,7 +196,7 @@ _setManPath() {
 
 _setInfoPath() {
    for i in "${HOMEBREW_PREFIX:+${HOMEBREW_PREFIX}/share/info}" ~/info ~/.local/share/info; do
-      [ -d "$i" ] && [ -z "$INFOPATH" -o "${INFOPATH##*:"$i":*}" -a "${INFOPATH##*:"$i"}" -a "${INFOPATH##"$i":*}" ] && INFOPATH=$i${INFOPATH+:$INFOPATH}
+      [ -d "$i" ] && [ -z "$INFOPATH" -o "${INFOPATH##*:"$i":*}" -a "${INFOPATH##*:"$i"}" -a "${INFOPATH##"$i":*}" -a "$INFOPATH" != "$i" ] && INFOPATH=$i${INFOPATH+:$INFOPATH}
    done
    [ -n "$INFOPATH" ] && export INFOPATH
 } ## _setInfoPath()

@@ -2,58 +2,77 @@
 ## If ~/.bash_completion.d directory exists, then its executable scripts are
 ## run in sequence, if they match the name of a command.
 ##
-## TODO: If global /etc/bash_completion.d exists, it has probably already been
-##       run; consider not doing anything here. Though this can be checked in
-##       .bashrc  or .bash_profile
+## TODO: Use dynamic loading (complete -D -F) rather than outright completion definitions
 
 ## If not interactive or run already, return
 [ -z "$PS1" -o -n "$RUN_BASH_COMPLETION" ] && return
 RUN_BASH_COMPLETION=true
-#echo .bash_completion...
+echo $(basename ${BASH_SOURCE:-${SHELL+$0}${SHELL-.bash_completion}})...
+
+## On Debian systems, this covers most completion definitions and is "run" after this local script
+[ -d /usr/share/bash-completion/completions ] && __system_completion_dir=/usr/share/bash-completion/completions
 
 ## Run all scripts in completion directories
-# /usr/local/Homebrew/completions/bash/
-# /usr/share/bash-completion/completions/
-for dir in /Applications/Docker.app/Contents/Resources/etc ${HOMEBREW_PREFIX+${HOMEBREW_PREFIX}/completions/$SHELL} ${HOMEBREW_PREFIX+${HOMEBREW_PREFIX}/etc/bash_completion.d} /usr/local/etc/bash_completion.d ~/.bash_completion.d
-do
-	found=0
-	[ -d "$dir" ] && for script in "${dir}"/*; do
-		## If script exists and its name is that of a valid command and a completion
-		## isn't already defined. For local scripts (in .bash_completion.d), the script
-		## must also be executable. This allows them to be disabled by marking them
-		## not exectuable. Since system scripts commonly suffix the command line with
-		## .bash-completion or -completion.bash, those need to ignored when looking
-		## for the command name.
-		## Need to wrap final && execution in if..fi because || would act as an "otherwise" and () wont work
-#		[ -x "$script" ] && type -t `basename "$script"`&>/dev/null && complete -p `basename "$script"` &>/dev/null || echo to be completed
-		cmd="${script%.bash-completion}"
-		cmd=$(basename "${cmd%-completion.bash}")
-		cmd=$(basename "${cmd%.completion}")
-		type -t "${cmd}" &>/dev/null && if ! complete -p "$cmd" &>/dev/null; then
-			if [ "$dir" != ~/.bash_completion.d -o -x "$script" ]; then
-				[ $found -eq 0 ] && echo -n $'Completion \e[32m'"$dir"$'\e[0m: \e[36m'"$cmd" && found=1 || echo -n $'\e[0m, \e[36m'"$cmd"
-				. "$script"
-			fi
-		fi
-	done
-	[ $found -gt 0 ] && echo $'\e[0m'
+[ $SHLVL -gt 1 ] && echo() { false; }
+for dir in /Applications/Docker.app/Contents/Resources/etc "${HOMEBREW_PREFIX+${HOMEBREW_PREFIX}/completions/$SHELL}" "${HOMEBREW_PREFIX+${HOMEBREW_PREFIX}/etc/bash_completion.d}" /usr/local/etc/bash_completion.d /Library/Developer/CommandLineTools/usr/share/git-core ~/.bash_completion.d; do
+  found=0
+  [ -d "$dir" ] && for script in "${dir}"/*; do
+    ## If script exists and its name is that of a valid command and a completion
+    ## isn't already defined. For local scripts (in .bash_completion.d), the script
+    ## must also be executable. This allows them to be disabled by marking them
+    ## not exectuable. Since system scripts commonly suffix the command line with
+    ## .bash-completion or -completion.bash, those need to ignored when looking
+    ## for the command name.
+    ## Need to wrap final && execution in if..fi because || would act as an "otherwise" and () wont work
+    #		[ -x "$script" ] && type -t `basename "$script"`&>/dev/null && complete -p `basename "$script"` &>/dev/null || echo to be completed
+    if [ ! -d "$script" ]; then
+      cmd=$(basename "${script%.bash-completion}")
+      cmd="${cmd%-completion.bash}"
+      cmd="${cmd%.completion}"
+      # [ -n "$__system_completion_dir" -a -s "$__system_completion_dir/$cmd" ] && echo "'$cmd'" defined in system completions
+      [ -n "$__system_completion_dir" -a -s "$__system_completion_dir/$cmd" ] && continue
+      type -t "${cmd}" &>/dev/null && if ! complete -p "$cmd" &>/dev/null; then
+        if [ "${dir#$HOME}" == "$dir" -o -x "$script" ]; then
+          [ $found -eq 0 ] && echo -n $'Completion \e[32m'"$dir"$'\e[0m: \e[36m'"$cmd" && found=1 || echo -n $'\e[0m, \e[36m'"$cmd"
+          . "$script"
+        fi
+      fi
+    fi
+  done
+  [ $found -gt 0 ] && echo $'\e[0m'
 done
-unset dir script found cmd
+unset dir script found cmd echo
+
+__nth_arg() {
+  shift $(($# - 1))
+  echo "$@"
+}
+__complete() {
+  local cmd=$(__nth_arg "$@")
+  # [ -n "$__system_completion_dir" -a -s "$__system_completion_dir/$cmd" ] && echo "'$cmd'" defined in system completions
+  [ -n "$__system_completion_dir" -a -s "$__system_completion_dir/$cmd" ] && return
+  # complete -p "$cmd" &>/dev/null && echo "'$cmd'" completion already exists
+  complete -p "$cmd" &>/dev/null && return
+  # echo Setting "'$cmd'" completion
+  complete "$@"
+}
 
 ## Override or simple additions to command completions
 function _compl_sshhosts() {
-    COMPREPLY=(`sed -rEn "/^Host[[:space:]]+$2/s/Host[ \t]*//p" ~/.ssh/config`)
+  COMPREPLY=($(sed -rEn "/^Host[[:space:]]+$2/s/Host[ \t]*//p" ~/.ssh/config))
 }
-complete -p alias &>/dev/null || complete -a alias
-complete -p shopt &>/dev/null || complete -A shopt -W "-p -s -u -q -o" shopt
-complete -p ssh &>/dev/null || complete -F _compl_sshhosts ssh
-complete -p scp &>/dev/null || complete -F _compl_sshhosts -S ":" -o default scp
-complete -p man &>/dev/null || complete -c man
-#complete -p cd &>/dev/null || complete -o filenames -o nospace -d cd
-complete -p unset &>/dev/null || complete -v unset
-complete -o filenames -o nospace -d cd
+__complete -a alias
+__complete -A shopt -W "-p -s -u -q -o" shopt
+__complete -F _compl_sshhosts ssh
+__complete -F _compl_sshhosts -S ":" -o default scp
+__complete -c man
+__complete -v unset
+# complete -o filenames -o nospace -d cd
+__complete -o filenames -o nospace -d cd
 
 if type -t svn &>/dev/null; then
-	complete -p svn &>/dev/null || complete -W "add checkout cleanup commit copy cp delete remove rm diff export help import info list ls lock log merge mkdir move mv rename propdel pdel propedit pedit propget pget proplist plist propset pset ps resolved revert status switch unlock update blame praise annotate" -f svn
-	`complete -p svn | awk -F ' '  '// { NF=NF-1; print; }'` chk
+  __complete -W "add checkout cleanup commit copy cp delete remove rm diff export help import info list ls lock log merge mkdir move mv rename propdel pdel propedit pedit propget pget proplist plist propset pset ps resolved revert status switch unlock update blame praise annotate" -f svn
+  $(complete -p svn | awk -F ' ' '// { NF=NF-1; print; }') chk
 fi
+
+unset __nth_arg __complete __system_completion_dir

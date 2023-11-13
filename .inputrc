@@ -1,23 +1,25 @@
 set mark-symlinked-directories On
-#set show-all-if-ambiguous On
+set show-all-if-ambiguous On ## Show all completion options
 set show-all-if-unmodified On
 
 #"\e[D": backward-char
 #"\e[C": forward-char
 $if bash
-"\e[5D": backward-word		## MacOS: C-left
-"\e[5C": forward-word		## MacOS: C-right
-"\e[1;5F": kill-line		## MacOS: C-end
-"\e[3;5~": kill-line		## MacOS: C-del
-"\e[1;5H": backward-kill-line	## MacOS: C-home
-"\e[1;5D": backward-word	## cygwin: C-left
-"\e[1;5C": forward-word		## cygwin: C-right
-"\e[1~": beginning-of-line	## cygwin: home
-"\e[4~": end-of-line		## cygwin: end
-"\e[F": end-of-line			## MacOS (Konsole): end
-"\e[3~": delete-char		## delete
-"\e[4;5~": kill-line 		## cygwin: c-end
-"\e[2~": overwrite-mode		## Cygwin: Ins key
+"\e[5D":    backward-word	  ## ^Left: MacOS
+"\e[1;5D":  backward-word	  ## ^Left: cygwin
+"\e[5C":    forward-word	  ## ^Right: MacOS
+"\e[1;5C":  forward-word	  ## ^Right: cygwin
+"\e[F":  end-of-line			  ## End: MacOS (Konsole)
+"\e[4~": end-of-line		    ## End: cygwin
+#"\e[F":    kill-line 		  ## ^End: Linux on Win
+"\e[1;5F":  kill-line		    ## ^End: MacOS
+"\e[4;5~":  kill-line 		  ## ^End: cygwin
+"\e[3~": delete-char		    ## Delete
+"\e[3;5~":  kill-line		    ## ^Del:  MacOS
+"\e[1~": beginning-of-line	## Home: cygwin
+#"\e[H":    backward-kill-line	## ^Home: Linux on Win
+"\e[1;5H":  backward-kill-line	## ^Home: MacOS
+"\e[2~": overwrite-mode		  ## Ins key: Cygwin
 ## Up/down will traverse thru history filtered by any initial commandline input
 C-p: history-search-backward
 #"\e[A": "\C-p\C-e"
@@ -27,7 +29,7 @@ C-n: history-search-forward
 "\e[B": history-search-forward
 "\e\e": kill-whole-line
 #C-w: kill-word			## For some reason this is not active by default
-C-w: "\ed"				## ... C-w has to use a macro call. 
+C-w: "\ed"				  ## ... C-w has to use a macro call.
 C-z: undo
 #"\C-xi": overwrite-mode
 "\C-x\C-f": dump-functions
@@ -40,4 +42,20 @@ TAB: menu-complete
 C-q: "\C-xv"
 #"\C-xv": "\ef\e \ed$\C-y\e\C-e\C-x\C-x\C-y="		## Edit variable
 #INS: overwrite-mode
+
+## https://www.youtube.com/watch?v=iupj4i7NRes
+## tab & s-tab to cycle fwd/backwards
+# "/t": menu-complete
+# "\e[Z": menu-complete-backward
+
+## Show
+# set show-all-if-ambiguous on ## Show all completion options
+# set show-all-if-unmodified on
+
+# set menu-complete-display-prefix on
+# "\e[A": history-search-backward
+# "\e[B": history-search-forward
+# "\eOA": history-search-backward
+# "\eOB": history-search-forward
+
 $endif ## bash

@@ -12,44 +12,44 @@
 ## 2017/10/11 Determine --color option support algorithmicly
 ## 2019/12/13 For macOS, must specify path to find command (does not default to current dir)
 ## 2023-03-14 Fixes for ash/busybox
-
-[ -n "$PS1" ] && echo $(basename ${BASH_SOURCE:-${SHELL+$0}${SHELL-.alias}})...
+[ -n "$PS1" ] && echo $(basename ${BASH_SOURCE:-${0/-*/.alias}})...
 
 ## Use builtin 'type' rather than extenal 'which'
 #type 2>/dev/null && alias which=type
 
-which /bin/busybox* >/dev/null 2>&1 && \
-   alias bb=`command ls /bin/busybox*|tail -1`
-alias	-- -='cd -' 2>/dev/null
-alias	..='cd ..'
-alias	...='cd ../..'
-alias	cd-='cd -'
-alias	cd..='cd ..'
-alias	cd...='cd ...'
-alias	cp='cp -ip'
+which /bin/busybox* >/dev/null 2>&1 &&
+  alias bb=$(command ls /bin/busybox* | tail -1)
+alias -- -='cd -' 2>/dev/null
+alias ..='cd ..'
+alias ...='cd ../..'
+alias cd-='cd -'
+alias cd..='cd ..'
+alias cd...='cd ...'
+alias cp='cp -ip'
 #which _cdd >/dev/null 2>&1 && \
 #   alias cd='. _cdd'
-which clear >/dev/null 2>&1 && \
+which clear >/dev/null 2>&1 &&
   alias cls='clear && printf "\e[3J"'
-alias	d=dir
-alias	df='df -h'
-alias	du='du -h'
-alias	del=rm
+alias d=dir
+alias df='df -h'
+alias du='du -h'
+alias del=rm
 alias distro='cat /etc/*-release'
-alias	e=edit
-alias	global='find . -depth -type d  -exec '	## Use '{}' & to suffix with \;
+alias e=edit
+alias global='find . -depth -type d  -exec ' ## Use '{}' & to suffix with \;
 #alias	go='. ~/bin/go'
 #alias	goto='cd `where `'
-alias	ha='history -a'
+alias ha='history -a'
 ## If jq dne, set alias to one of possible modules
 ! type jq >/dev/null 2>&1 && for _i in jq-linux64 jq-osx-amd64 jq-win64.exe; do if [ -x $_i ]; then
-	alias jq=$_i
-	break;
-fi; done; unset _i
-alias	json_prettify='python -m json.tool'
+  alias jq=$_i
+  break
+fi; done
+unset _i
+alias json_prettify='python -m json.tool'
 # if [ -x /usr/bin/dircolors ]; then
 #  test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-	# COLORIZE='--color=auto'
+# COLORIZE='--color=auto'
 #  alias ls='ls --color=auto'
 #  alias dir='dir --color=auto'
 #  alias vdir='vdir --color=auto'
@@ -60,9 +60,9 @@ alias	json_prettify='python -m json.tool'
 # fi
 # type dircolors &>/dev/null && COLORIZE='--color=auto'
 type dircolors &>/dev/null && ls='ls --color=auto'
-alias	ll='l -A'
-alias	l="ls -l"
-alias	la="ls -A"
+alias ll='l -A'
+alias l="ls -l"
+alias la="ls -A"
 # alias	la="ls -A $COLORIZE"
 # alias	l="ls -l $COLORIZE"
 # alias	ls="ls -F $COLORIZE"
@@ -70,237 +70,233 @@ alias	la="ls -A"
 # unset COLORIZE
 
 #alias	less='less -r'                          # raw control characters
-alias	mkdir='command mkdir -p'
-! which more  >/dev/null 2>&1 && \
-	alias more=less
-alias	md=mkdir
-alias	mv='mv -i'
-alias	myip='curl http://ipecho.net/plain; echo'
-alias	pause='echo -n "Press any key to continue..." && read'
-which pg >/dev/null 2>&1 && \
-	alias	pg="command pg -n -s -p ' Page %d '"
-alias	path='echo PATH=$PATH'
+alias mkdir='command mkdir -p'
+! which more >/dev/null 2>&1 &&
+  alias more=less
+alias md=mkdir
+alias mv='mv -i'
+alias myip='curl http://ipecho.net/plain; echo'
+alias pause='echo -n "Press any key to continue..." && read'
+which pg >/dev/null 2>&1 &&
+  alias pg="command pg -n -s -p ' Page %d '"
+alias path='echo PATH=$PATH'
 if [ -e /dev/clipboard ]; then
-	alias	pbcopy='cat >/dev/clipboard'
-	alias	pbpaste='cat /dev/clipboard'
+  alias pbcopy='cat >/dev/clipboard'
+  alias pbpaste='cat /dev/clipboard'
 elif which xclip >/dev/null 2>&1; then
-	alias	pbcopy='xclip -sel clip'
-	alias	pbpaste='xclip -sel clilp -o'
+  alias pbcopy='xclip -sel clip'
+  alias pbpaste='xclip -sel clilp -o'
 elif [ -e /dev/clip ]; then
-	alias	pbcopy='cat >/dev/clip'
-	alias	pbpaste='cat /dev/clip'
+  alias pbcopy='cat >/dev/clip'
+  alias pbpaste='cat /dev/clip'
 fi
 if which udisksctl >/dev/null 2>&1; then
-	alias mnt='udisksctl mount -b'
-	alias umnt='udisksctl unmount -b'
+  alias mnt='udisksctl mount -b'
+  alias umnt='udisksctl unmount -b'
 elif which diskutil >/dev/null 2>&1; then
-	alias mnt='diskutil mount'
-	alias umnt='diskutil unmount'
+  alias mnt='diskutil mount'
+  alias umnt='diskutil unmount'
 fi
 #alias	qenv='set|grep -E "^[A-Za-z0-1_\-]+="'
-alias	rd=rmdir
-alias	ren=mv
-alias	resolve='type -a --'
-alias	scp='scp -p'
-alias	setvars="set|egrep '^[^ 	]+='"	## not prefixed with ' ' or '\t'
-[ -n "$SHELL" ] && alias	sh='$SHELL'
-which vim  >/dev/null 2>&1 && alias	vi=vim
-alias	whence='type -a'                    ## where, of a sort
-alias	where='find . -not \( \( -name .svn -o -name .git \) -prune \) -iname 2>/dev/null'
+alias rd=rmdir
+alias ren=mv
+alias resolve='type -a --'
+alias scp='scp -p'
+alias setvars="set|egrep '^[^ 	]+='" ## not prefixed with ' ' or '\t'
+[ -n "$SHELL" ] && alias sh='$SHELL'
+which vim >/dev/null 2>&1 && alias vi=vim
+alias whence='type -a' ## where, of a sort
+alias where='find . -not \( \( -name .svn -o -name .git \) -prune \) -iname 2>/dev/null'
 
 if which svn >/dev/null 2>&1; then
-   alias revert='svn revert'
-   alias update='svn update'
+  alias revert='svn revert'
+  alias update='svn update'
 fi
 if which git >/dev/null 2>&1; then
-   alias pull='git pull'
-   alias push='git push'
+  alias pull='git pull'
+  alias push='git push'
 fi
 if which git >/dev/null 2>&1; then
-   commit() {
-      [ "`git rev-parse --is-inside-work-tree`" = 'true' ] && git commit "$@"
-   }
-   alias status='[ "`git rev-parse --is-inside-work-tree`" = 'true' ] && git filestatus'
-   alias clone='git clone'
+  commit() {
+    [ "$(git rev-parse --is-inside-work-tree)" = 'true' ] && git commit "$@"
+  }
+  alias status='[ "`git rev-parse --is-inside-work-tree`" = 'true' ] && git filestatus'
+  alias clone='git clone'
 fi
 #if which svn >/dev/null 2>&1 || which git >/dev/null 2>&1; then
 #   alias status='[ "`git rev-parse --is-inside-work-tree`" = 'true' ] && git status; [ -d .svn ] && svn status'
 #   alias commit='[ "`git rev-parse --is-inside-work-tree`" = 'true' ] && git commit "$@"; [ -d .svn ] && svn commit'
 #fi
 
-cdto()
-{
-	command cd $(dirname `where "$@"|tail -1`)
-	[ -d "$@" ] && command cd "$@"
+cdto() {
+  command cd $(dirname $(where "$@" | tail -1))
+  [ -d "$@" ] && command cd "$@"
 }
 
-cd()
-{
-   [ "$1" = "--" ] && shift
-   local x1=$*
-   local x2
-	until [ "$x1" = "$x2" ]; do
-		x2=$x1
-		x1=${x1/.../..\/..}
-	done
-#  echo $x1|sed 's/\([^\\]\) /\1\\ /g'
-#   if [ `pwd` = "$HOME" ]; then
-#       command cd -;
-#   else
-#       command cd "${x1:-$HOME}";
-#   fi
-    command cd "${x1:--}"
+cd() {
+  [ "$1" = "--" ] && shift
+  local x1=$*
+  local x2
+  until [ "$x1" = "$x2" ]; do
+    x2=$x1
+    x1=${x1/.../..\/..}
+  done
+  #  echo $x1|sed 's/\([^\\]\) /\1\\ /g'
+  #   if [ `pwd` = "$HOME" ]; then
+  #       command cd -;
+  #   else
+  #       command cd "${x1:-$HOME}";
+  #   fi
+  command cd "${x1:--}"
 }
 
 diff() {
-	[ -d ".svn" ] && cmd=svn
-	git rev-parse --is-inside-work-tree &>/dev/null && cmd=git
-	if [ $# -lt 2 -a -n "$cmd" ]; then
-		$cmd diff "$@"
-	else
-		command diff "$@"
-	fi
+  [ -d ".svn" ] && cmd=svn
+  git rev-parse --is-inside-work-tree &>/dev/null && cmd=git
+  if [ $# -lt 2 -a -n "$cmd" ]; then
+    $cmd diff "$@"
+  else
+    command diff "$@"
+  fi
 }
 
-edit()
-{
-   vi=vi
-   which vim >/dev/null 2>&1 && vi=vim
-   if [ $# -eq 0 ]; then
-	if [ -f "$EDTF" ]; then
-	   echo $EDTF
-	   ${EDITOR:-$vi} "$EDTF"
-	else
-	   [ -n "$EDTF" ] && echo \"$EDTF\" does not exist.
-	fi
-   else
-	export EDTF="$@"
-	${EDITOR:-$vi} "$@"
-   fi
+edit() {
+  vi=vi
+  which vim >/dev/null 2>&1 && vi=vim
+  if [ $# -eq 0 ]; then
+    if [ -f "$EDTF" ]; then
+      echo $EDTF
+      ${EDITOR:-$vi} "$EDTF"
+    else
+      [ -n "$EDTF" ] && echo \"$EDTF\" does not exist.
+    fi
+  else
+    export EDTF="$@"
+    ${EDITOR:-$vi} "$@"
+  fi
 }
 
 go() {
-	local OPTERR=0
-	local OPTIND=0
-	local OPTARG=""
-	while getopts ':hs:' OPTION; do
-		case $OPTION in
-		s)
-			local entry="$OPTARG $(pwd)"
-			echo $entry >> ~/.go
-			echo Added "$OPTARG=$(pwd)"
-			complete -W "-s $(cut -d' ' -f1 <~/.go|tr '\n' ' ')" go
-			return 0
-			;;
-		h|\?|:)
-			[ "$OPTION" = ":" ] && echo "Option -$OPTARG requires an argument." >&2
-			printf "Usage: %s: [-s] nickname\n" "go" >&2
-			return 2
-			;;
-	  esac
-	done
-	if [ $# -eq 0 ]; then
-		cat ~/.go
-		return
-	fi
-	[ $OPTIND -gt 0 ] && shift $(($OPTIND-1));
-#	[ -r ~/.go ] && cd `awk "/^$1[ \t]/ { GOPATH=\\$2 } END { printf \"%s\", GOPATH }" ~/.go|sed "s%~%$HOME%"`
-	[ -r ~/.go ] && cd "`command grep -i '^'$1'[ \t]' ~/.go |cut -d ' ' -f 2-|tail -1`"
+  local OPTERR=0
+  local OPTIND=0
+  local OPTARG=""
+  while getopts ':hs:' OPTION; do
+    case $OPTION in
+    s)
+      local entry="$OPTARG $(pwd)"
+      echo $entry >>~/.go
+      echo Added "$OPTARG=$(pwd)"
+      complete -W "-s $(cut -d' ' -f1 <~/.go | tr '\n' ' ')" go
+      return 0
+      ;;
+    h | \? | :)
+      [ "$OPTION" = ":" ] && echo "Option -$OPTARG requires an argument." >&2
+      printf "Usage: %s: [-s] nickname\n" "go" >&2
+      return 2
+      ;;
+    esac
+  done
+  if [ $# -eq 0 ]; then
+    cat ~/.go
+    return
+  fi
+  [ $OPTIND -gt 0 ] && shift $(($OPTIND - 1))
+  #	[ -r ~/.go ] && cd `awk "/^$1[ \t]/ { GOPATH=\\$2 } END { printf \"%s\", GOPATH }" ~/.go|sed "s%~%$HOME%"`
+  [ -r ~/.go ] && cd "$(command grep -i '^'$1'[ \t]' ~/.go | cut -d ' ' -f 2- | tail -1)"
 }
-type complete &>/dev/null && [ -r ~/.go ] && complete -W "-s $(cut -d' ' -f1 <~/.go|tr '\n' ' ')" go
+type complete &>/dev/null && [ -r ~/.go ] && complete -W "-s $(cut -d' ' -f1 <~/.go | tr '\n' ' ')" go
 
 ## Go to directory name under current directory
 goto() {
-	local path="$1"
-	[ -f "$1" ] && path=`dirname "$1"`
-	cd `find . -iname "$path" -type d ! -path '*/.*/*' 2>/dev/null|head -1`
+  local path="$1"
+  [ -f "$1" ] && path=$(dirname "$1")
+  cd $(find . -iname "$path" -type d ! -path '*/.*/*' 2>/dev/null | head -1)
 }
 
 lld() {
-	find  ~ -maxdepth 1 -type f -name ".*" -exec ls "$@" {} +
+  find ~ -maxdepth 1 -type f -name ".*" -exec ls "$@" {} +
 }
 
 ## mkdir; cd
 mcd() {
-	mkdir "$@" && cd "$@"
+  mkdir "$@" && cd "$@"
 }
 
-## Because of syntax issues w/non-Bash shells, we have to interpret
-## the function definition (only if in Bash)
-[ -n "$BASH" ] && eval '
 qenv() {
-	local vars=($(compgen -v))
-	local var
-	if [ -t 1 ]; then
-		local t_color="\033[33m"
-		local t_reset="\033[0m"
-	fi
-	for var in "${vars[@]}"; do
-		echo -ne $t_color$var$t_reset
-		echo "="$(eval echo \$${var})
-	done
-}'
+  # printenv
+  if [ -t 1 ]; then
+    set | sort | sed -Ee '/^[_[:alnum:]]+=/!d' -e $'s/^([_[:alnum:]]+)=/\033[33m\\1\033[0m=/'
+  else
+    set | sort | sed -Ee '/^[_[:alnum:]]+=/!d'
+  fi
+  # local var
+  # for var in $(compgen -v); do
+  # 	echo "$var=${!var}"
+  # done
+}
 
 ## If no wget, use curl
-if ! which wget >/dev/null 2>&1 ; then
-	_wget() { curl "${1}" -o $(basename "${1}") ; };
-	alias wget='_wget'
+if ! type wget >/dev/null 2>&1; then
+  _wget() { curl "${1}" -o $(basename "${1}"); }
+  alias wget='_wget'
 fi
 
 ## OS exceptions
 ## Enable color feature of select commands
 case "$OSTYPE" in
-   darwin*)                                ## Apple/Mac specific
-      alias ls='ls -GF'
-      alias dir='ls -goG'
-      alias imgcat='iterm_imgcat'
-      alias start=open
-      ! type jq >/dev/null 2>&1 && type jq-osx-amd64 >/dev/null 2>&1 && alias jq='jq-osx-amd64'
-      [ -x /Applications/Atom.app/Contents/Resources/app/atom.sh ] && \
-	   alias atom='/Applications/Atom.app/Contents/Resources/app/atom.sh'
-		manp() {
-			man -t $@|open -f -a Preview
-		}
-    ;;
+darwin*) ## Apple/Mac specific
+  alias ls='ls -GF'
+  alias dir='ls -goG'
+  alias imgcat='iterm_imgcat'
+  alias start=open
+  ! type jq >/dev/null 2>&1 && type jq-osx-amd64 >/dev/null 2>&1 && alias jq='jq-osx-amd64'
+  [ -x /Applications/Atom.app/Contents/Resources/app/atom.sh ] &&
+    alias atom='/Applications/Atom.app/Contents/Resources/app/atom.sh'
+  manp() {
+    man -t $@ | open -f -a Preview
+  }
+  ;;
 
-  cygwin)
-		alias dir='ls -gG'
-#   alias ls='ls --color -F'
-  	mklink() {
-			if [ -z "$1" ]; then
-				echo -e "Make NTFS junction.\n\n\tForm: $FUNCNAME target_dir junction_name\n"
-				return 1
-			fi
-    	cmd /c mklink /j "$2" "$1"
-  	}
-    ! type jq >/dev/null 2>&1 && type jq-win64 >/dev/null 2>&1 && alias jq='jq-win64'
-    alias open=cygstart
-    alias start=cygstart
-    alias sudo="cygstart --action=runas"
-    ;;
+cygwin)
+  alias dir='ls -gG'
+  #   alias ls='ls --color -F'
+  mklink() {
+    if [ -z "$1" ]; then
+      echo -e "Make NTFS junction.\n\n\tForm: $FUNCNAME target_dir junction_name\n"
+      return 1
+    fi
+    cmd /c mklink /j "$2" "$1"
+  }
+  ! type jq >/dev/null 2>&1 && type jq-win64 >/dev/null 2>&1 && alias jq='jq-win64'
+  alias open=cygstart
+  alias start=cygstart
+  alias sudo="cygstart --action=runas"
+  ;;
 
-  linux-gnu|*)
-    ! type jq >/dev/null 2>&1 && type jq-linux64 >/dev/null 2>&1 && alias jq='jq-linux64'
-		if [ ! \( -d /jffs -a -d /cifs1 \) ]; then ## !Apple and !Tomato router
-			alias	ls='ls --color -F'
-		fi
-		manp() {
-			local tmpf="$(mktemp --tmpdir -u "manp-${@: -1}-XXX.pdf")"
-			man -t "$@" > "$tmpf" && {
-				evince "$tmpf" &
-				disown %$(jobs|sed -En '$ s/\[([0-9]+)\].*/\1/p')
-				if [ -r "$tmpf" ]; then
-					sleep 3 && rm "$tmpf" &
-					disown %$(jobs|sed -En '$ s/\[([0-9]+)\].*/\1/p')
-				fi
-			} 2>/dev/null
-		}
-		which xdg-open >/dev/null 2>&1 && \
-				alias open=xdg-open && alias start=xdg-open
+linux-gnu | *)
+  ! type jq >/dev/null 2>&1 && type jq-linux64 >/dev/null 2>&1 && alias jq='jq-linux64'
+  if [ ! \( -d /jffs -a -d /cifs1 \) ]; then ## !Apple and !Tomato router
+    alias ls='ls --color -F'
+  fi
+  type evince &>/dev/null &&
+    manp() {
+      local tmpf="$(mktemp --tmpdir -u "manp-${@: -1}-XXX.pdf")"
+      man -t "$@" >"$tmpf" && {
+        evince "$tmpf" &
+        disown %$(jobs | sed -En '$ s/\[([0-9]+)\].*/\1/p')
+        if [ -r "$tmpf" ]; then
+          sleep 3 && rm "$tmpf" &
+          disown %$(jobs | sed -En '$ s/\[([0-9]+)\].*/\1/p')
+        fi
+      } 2>/dev/null
+    }
+  type xdg-open >/dev/null 2>&1 &&
+    alias open=xdg-open && alias start=xdg-open
+  ;;
 
 esac
 
 ## HOST for zsh, HOSTNAME for bash
 [ -n "$HOST$HOSTNAME" -a "$USER" != "root" ] && alias grep='grep --color'
 
-[ -r ~/.local_alias ] && . ~/.local_alias
+[ ] && __sourceDotFiles ".alias_$(uname -s)" ".alias_${USER:-$(id -un)}" ".alias_${HOSTNAME%.local}" .alias_local

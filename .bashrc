@@ -19,7 +19,7 @@
 ## 10/11/2017 WRL Correctly check command (w/o `) before &&, ||: Set shopt properly
 ## 2021-01-25 WRL Execute .profile_`os-name` .profile_`$USER .profile_$HOSTNAME .profile_local, if they exist
 ## 2022-10-19 WRL Integrate NVM & RVM settings so they occur before bash_completion
-            - WRL Add `_source*()` functions to test and source scripts
+##          - WRL Add `_source*()` functions to test and source scripts
 
 ## If not running interactively, don't do anything
 ## Could also check that $- does not contain 'i': case $-; *i*) ...;; *) ...;; esac
@@ -37,7 +37,7 @@ _sourceFiles() {
 }
 
 _sourceDotFiles() {
-	_sourceFiles ${@/#/$HOME\/}
+	_sourceFiles "${@/#/$HOME\/}"
 }
 
 #if [ -n "$SESSION_MANAGER" -o -n "$SESSION" ]; then	## Generic way to determine whether to run .profile
